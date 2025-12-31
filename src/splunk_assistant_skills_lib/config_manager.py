@@ -26,15 +26,31 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from assistant_skills_lib.config_manager import BaseConfigManager
 from .error_handler import ValidationError
 from .splunk_client import SplunkClient
 
 
-class ConfigManager:
-    """Manages configuration from multiple sources with profile support."""
+class ConfigManager(BaseConfigManager):
+    """Manages Splunk configuration from multiple sources, inheriting from BaseConfigManager."""
 
-    DEFAULT_CONFIG: Dict[str, Any] = {
-        "splunk": {
+    def __init__(self, profile: Optional[str] = None):
+        """
+        Initialize the configuration manager.
+
+        Args:
+            profile: Profile name to use. If not provided,
+                       searches for default from env or settings files.
+        """
+        super().__init__(profile=profile)
+
+    def get_service_name(self) -> str:
+        """Returns the name of the service, which is 'splunk'."""
+        return "splunk"
+
+    def get_default_config(self) -> Dict[str, Any]:
+        """Returns the default configuration dictionary for Splunk."""
+        return {
             "default_profile": "default",
             "profiles": {
                 "default": {
@@ -63,86 +79,12 @@ class ConfigManager:
                 "auto_cancel": 300,
             },
         }
-    }
 
-    def __init__(self, config_dir: Optional[Path] = None):
-        """
-        Initialize configuration manager.
 
-        Args:
-            config_dir: Path to .claude directory (auto-detected if not provided)
-        """
-        self.config_dir = config_dir or self._find_config_dir()
-        self._config: Optional[Dict[str, Any]] = None
-
-    def _find_config_dir(self) -> Path:
-        """Find the .claude configuration directory."""
-        # Start from current directory and walk up
-        current = Path.cwd()
-        while current != current.parent:
-            config_path = current / ".claude"
-            if config_path.is_dir():
-                return config_path
-            current = current.parent
-
-        # Default to current directory's .claude
-        return Path.cwd() / ".claude"
-
-    def _load_json_file(self, path: Path) -> Dict[str, Any]:
-        """Load JSON file if it exists."""
-        if path.is_file():
-            try:
-                with open(path, "r") as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, IOError):
-                return {}
-        return {}
-
-    def _deep_merge(
-        self, base: Dict[str, Any], override: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Deep merge two dictionaries."""
-        result = base.copy()
-        for key, value in override.items():
-            if (
-                key in result
-                and isinstance(result[key], dict)
-                and isinstance(value, dict)
-            ):
-                result[key] = self._deep_merge(result[key], value)
-            else:
-                result[key] = value
-        return result
-
-    def load_config(self) -> Dict[str, Any]:
-        """
-        Load configuration from all sources with proper priority.
-
-        Returns:
-            Merged configuration dictionary
-        """
-        if self._config is not None:
-            return self._config
-
-        # Start with defaults
-        config = self.DEFAULT_CONFIG.copy()
-
-        # Load settings.json (team defaults)
-        settings_path = self.config_dir / "settings.json"
-        settings = self._load_json_file(settings_path)
-        config = self._deep_merge(config, settings)
-
-        # Load settings.local.json (personal overrides)
-        local_path = self.config_dir / "settings.local.json"
-        local_settings = self._load_json_file(local_path)
-        config = self._deep_merge(config, local_settings)
-
-        self._config = config
-        return config
 
     def get_profile_config(self, profile_name: Optional[str] = None) -> Dict[str, Any]:
         """
-        Get configuration for a specific profile.
+        Get configuration for a specific profile, merged with defaults and environment variables.
 
         Args:
             profile_name: Profile name (uses default if not specified)
@@ -150,83 +92,53 @@ class ConfigManager:
         Returns:
             Profile configuration dictionary
         """
-        config = self.load_config()
-        splunk_config = config.get("splunk", {})
-
         # Determine profile to use
-        if profile_name is None:
-            profile_name = os.environ.get("SPLUNK_PROFILE") or splunk_config.get(
-                "default_profile", "default"
-            )
+        profile_to_use = profile_name or self.profile
+        
+        # Get base config from files
+        base_profile = super().get_profile_config(profile_to_use)
 
-        profiles = splunk_config.get("profiles", {})
-        profile = profiles.get(profile_name, {})
-
-        # Merge with default profile if exists
-        if profile_name != "default" and "default" in profiles:
-            profile = self._deep_merge(profiles["default"], profile)
+        # Merge with default profile if not the default
+        default_profile_config = self.config.get(self.service_name, {}).get("profiles", {}).get("default", {})
+        if profile_to_use != "default":
+            merged_profile = self._deep_merge(default_profile_config, base_profile)
+        else:
+            merged_profile = base_profile
 
         # Apply environment variable overrides
         env_overrides = self._get_env_overrides()
-        profile = self._deep_merge(profile, env_overrides)
+        final_profile = self._deep_merge(merged_profile, env_overrides)
 
         # Add API and search defaults
-        profile["api"] = splunk_config.get("api", self.DEFAULT_CONFIG["splunk"]["api"])
-        profile["search_defaults"] = splunk_config.get(
-            "search_defaults", self.DEFAULT_CONFIG["splunk"]["search_defaults"]
-        )
+        final_profile["api"] = self.get_api_config()
+        final_profile["search_defaults"] = self.config.get(self.service_name, {}).get("search_defaults", {})
 
-        return profile
+        return final_profile
 
     def _get_env_overrides(self) -> Dict[str, Any]:
         """Get configuration overrides from environment variables."""
         overrides: Dict[str, Any] = {}
-
-        if os.environ.get("SPLUNK_SITE_URL"):
-            overrides["url"] = os.environ["SPLUNK_SITE_URL"]
-
-        if os.environ.get("SPLUNK_MANAGEMENT_PORT"):
-            try:
-                overrides["port"] = int(os.environ["SPLUNK_MANAGEMENT_PORT"])
-            except ValueError:
-                pass
-
-        if os.environ.get("SPLUNK_TOKEN"):
-            overrides["token"] = os.environ["SPLUNK_TOKEN"]
+        
+        if url := self.get_credential_from_env("SITE_URL"): overrides["url"] = url
+        if port := self.get_credential_from_env("MANAGEMENT_PORT"):
+            try: overrides["port"] = int(port)
+            except ValueError: pass
+        if token := self.get_credential_from_env("TOKEN"):
+            overrides["token"] = token
             overrides["auth_method"] = "bearer"
-
-        if os.environ.get("SPLUNK_USERNAME"):
-            overrides["username"] = os.environ["SPLUNK_USERNAME"]
-
-        if os.environ.get("SPLUNK_PASSWORD"):
-            overrides["password"] = os.environ["SPLUNK_PASSWORD"]
-            if not os.environ.get("SPLUNK_TOKEN"):
-                overrides["auth_method"] = "basic"
-
-        if os.environ.get("SPLUNK_VERIFY_SSL"):
-            overrides["verify_ssl"] = os.environ["SPLUNK_VERIFY_SSL"].lower() in (
-                "true",
-                "1",
-                "yes",
-            )
-
-        if os.environ.get("SPLUNK_DEFAULT_APP"):
-            overrides["default_app"] = os.environ["SPLUNK_DEFAULT_APP"]
-
-        if os.environ.get("SPLUNK_DEFAULT_INDEX"):
-            overrides["default_index"] = os.environ["SPLUNK_DEFAULT_INDEX"]
+        if username := self.get_credential_from_env("USERNAME"): overrides["username"] = username
+        if password := self.get_credential_from_env("PASSWORD"):
+            overrides["password"] = password
+            if not overrides.get("token"): overrides["auth_method"] = "basic"
+        if verify_ssl := self.get_credential_from_env("VERIFY_SSL"): overrides["verify_ssl"] = verify_ssl.lower() in ("true", "1", "yes")
+        if default_app := self.get_credential_from_env("DEFAULT_APP"): overrides["default_app"] = default_app
+        if default_index := self.get_credential_from_env("DEFAULT_INDEX"): overrides["default_index"] = default_index
 
         return overrides
 
     def get_client_kwargs(self, profile_name: Optional[str] = None) -> Dict[str, Any]:
         """
         Get keyword arguments for SplunkClient initialization.
-
-        Args:
-            profile_name: Profile name to use
-
-        Returns:
-            Dictionary of kwargs for SplunkClient
         """
         profile = self.get_profile_config(profile_name)
         api_config = profile.get("api", {})
@@ -240,7 +152,6 @@ class ConfigManager:
             "retry_backoff": api_config.get("retry_backoff", 2.0),
         }
 
-        # Add authentication
         auth_method = profile.get("auth_method", "bearer")
         if auth_method == "bearer" and profile.get("token"):
             kwargs["token"] = profile["token"]
@@ -255,61 +166,35 @@ class ConfigManager:
     def validate_config(self, profile_name: Optional[str] = None) -> list:
         """
         Validate configuration and return list of issues.
-
-        Args:
-            profile_name: Profile name to validate
-
-        Returns:
-            List of validation error messages (empty if valid)
         """
         errors = []
         profile = self.get_profile_config(profile_name)
 
         if not profile.get("url"):
-            errors.append(
-                "Missing Splunk URL. Set SPLUNK_SITE_URL or configure in settings.json"
-            )
-
+            errors.append("Missing Splunk URL. Set SPLUNK_SITE_URL or configure in settings.json")
+        
         auth_method = profile.get("auth_method", "bearer")
-        if auth_method == "bearer":
-            if not profile.get("token"):
-                errors.append(
-                    "Missing Splunk token. Set SPLUNK_TOKEN or configure in settings.local.json"
-                )
-        else:
-            if not profile.get("username"):
-                errors.append(
-                    "Missing Splunk username. Set SPLUNK_USERNAME or configure in settings.local.json"
-                )
-            if not profile.get("password"):
-                errors.append(
-                    "Missing Splunk password. Set SPLUNK_PASSWORD or configure in settings.local.json"
-                )
-
+        if auth_method == "bearer" and not profile.get("token"):
+            errors.append("Missing Splunk token. Set SPLUNK_TOKEN or configure in settings.local.json")
+        elif auth_method != "bearer" and not (profile.get("username") and profile.get("password")):
+            errors.append("Missing Splunk username/password for basic auth. Set SPLUNK_USERNAME and SPLUNK_PASSWORD or configure in settings.local.json")
+        
         return errors
-
 
 # Global config manager instance
 _config_manager: Optional[ConfigManager] = None
-
 
 def get_config_manager() -> ConfigManager:
     """Get or create global ConfigManager instance."""
     global _config_manager
     if _config_manager is None:
-        _config_manager = ConfigManager()
+        _config_manager = ConfigManager.get_instance()
     return _config_manager
 
 
 def get_config(profile: Optional[str] = None) -> Dict[str, Any]:
     """
     Get configuration for specified profile.
-
-    Args:
-        profile: Profile name (uses default if not specified)
-
-    Returns:
-        Profile configuration dictionary
     """
     return get_config_manager().get_profile_config(profile)
 
@@ -317,24 +202,11 @@ def get_config(profile: Optional[str] = None) -> Dict[str, Any]:
 def get_splunk_client(profile: Optional[str] = None) -> SplunkClient:
     """
     Create SplunkClient instance from configuration.
-
-    Args:
-        profile: Profile name (uses default if not specified)
-
-    Returns:
-        Configured SplunkClient instance
-
-    Raises:
-        ValidationError: If configuration is invalid
     """
     manager = get_config_manager()
-
-    # Validate configuration
     errors = manager.validate_config(profile)
     if errors:
         raise ValidationError("\n".join(errors))
-
-    # Get client kwargs and create client
     kwargs = manager.get_client_kwargs(profile)
     return SplunkClient(**kwargs)
 
@@ -342,28 +214,14 @@ def get_splunk_client(profile: Optional[str] = None) -> SplunkClient:
 def get_search_defaults(profile: Optional[str] = None) -> Dict[str, Any]:
     """
     Get search default settings.
-
-    Args:
-        profile: Profile name
-
-    Returns:
-        Search defaults dictionary
     """
     config = get_config(profile)
-    return config.get(
-        "search_defaults", ConfigManager.DEFAULT_CONFIG["splunk"]["search_defaults"]
-    )
+    return config.get("search_defaults", {})
 
 
 def get_api_settings(profile: Optional[str] = None) -> Dict[str, Any]:
     """
     Get API settings.
-
-    Args:
-        profile: Profile name
-
-    Returns:
-        API settings dictionary
     """
     config = get_config(profile)
-    return config.get("api", ConfigManager.DEFAULT_CONFIG["splunk"]["api"])
+    return config.get("api", {})

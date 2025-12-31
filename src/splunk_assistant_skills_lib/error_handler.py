@@ -4,152 +4,90 @@ Splunk Error Handling
 
 Provides a comprehensive exception hierarchy and error handling utilities
 for Splunk REST API interactions.
-
-Exception Hierarchy:
-    SplunkError (base)
-    ├── AuthenticationError (401)
-    ├── AuthorizationError (403)
-    ├── ValidationError (400)
-    ├── NotFoundError (404)
-    ├── RateLimitError (429)
-    ├── SearchQuotaError (503)
-    ├── JobFailedError (job failed state)
-    └── ServerError (5xx)
 """
 
 import functools
 import json
 import re
 import sys
-import traceback
 from typing import Any, Callable, Dict, Optional
 
 import requests
 
+from assistant_skills_lib.error_handler import (
+    BaseAPIError,
+    AuthenticationError as BaseAuthenticationError,
+    PermissionError as BasePermissionError,
+    ValidationError as BaseValidationError,
+    NotFoundError as BaseNotFoundError,
+    RateLimitError as BaseRateLimitError,
+    ServerError as BaseServerError,
+    sanitize_error_message as base_sanitize_error_message,
+    print_error as base_print_error,
+    handle_errors as base_handle_errors,
+)
 
-class SplunkError(Exception):
+
+class SplunkError(BaseAPIError):
     """Base exception for all Splunk-related errors."""
-
-    def __init__(
-        self,
-        message: str,
-        status_code: Optional[int] = None,
-        operation: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
-        self.message = message
-        self.status_code = status_code
-        self.operation = operation
-        self.details = details or {}
-        super().__init__(self.format_message())
-
-    def format_message(self) -> str:
-        """Format error message with context."""
-        parts = []
-        if self.operation:
-            parts.append(f"[{self.operation}]")
-        if self.status_code:
-            parts.append(f"HTTP {self.status_code}:")
-        parts.append(self.message)
-        return " ".join(parts)
+    pass
 
 
-class AuthenticationError(SplunkError):
+class AuthenticationError(BaseAuthenticationError, SplunkError):
     """Raised when authentication fails (401 Unauthorized)."""
-
-    def __init__(
-        self,
-        message: str = "Authentication failed. Check your token or credentials.",
-        **kwargs: Any,
-    ):
-        super().__init__(message, status_code=401, **kwargs)
+    def __init__(self, message: str = "Authentication failed. Check your token or credentials.", **kwargs: Any):
+        super().__init__(message, **kwargs)
 
 
-class AuthorizationError(SplunkError):
+class AuthorizationError(BasePermissionError, SplunkError):
     """Raised when user lacks required permissions (403 Forbidden)."""
-
-    def __init__(
-        self,
-        message: str = "Insufficient permissions to perform this operation.",
-        capability: Optional[str] = None,
-        **kwargs: Any,
-    ):
+    def __init__(self, message: str = "Insufficient permissions to perform this operation.", capability: Optional[str] = None, **kwargs: Any):
         self.capability = capability
         if capability:
             message = f"{message} Required capability: {capability}"
-        super().__init__(message, status_code=403, **kwargs)
+        super().__init__(message, **kwargs)
 
 
-class ValidationError(SplunkError):
+class ValidationError(BaseValidationError, SplunkError):
     """Raised for invalid input or request parameters (400 Bad Request)."""
-
-    def __init__(
-        self,
-        message: str = "Invalid request parameters.",
-        field: Optional[str] = None,
-        **kwargs: Any,
-    ):
+    def __init__(self, message: str = "Invalid request parameters.", field: Optional[str] = None, **kwargs: Any):
         self.field = field
         if field:
             message = f"Invalid value for '{field}': {message}"
-        super().__init__(message, status_code=400, **kwargs)
+        super().__init__(message, **kwargs)
 
 
-class NotFoundError(SplunkError):
+class NotFoundError(BaseNotFoundError, SplunkError):
     """Raised when requested resource is not found (404 Not Found)."""
-
-    def __init__(
-        self,
-        message: str = "Resource not found.",
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        **kwargs: Any,
-    ):
-        self.resource_type = resource_type
-        self.resource_id = resource_id
+    def __init__(self, message: str = "Resource not found.", resource_type: Optional[str] = None, resource_id: Optional[str] = None, **kwargs: Any):
         if resource_type and resource_id:
             message = f"{resource_type} '{resource_id}' not found."
         elif resource_type:
             message = f"{resource_type} not found."
-        super().__init__(message, status_code=404, **kwargs)
+        super().__init__(message, **kwargs)
 
 
-class RateLimitError(SplunkError):
+class RateLimitError(BaseRateLimitError, SplunkError):
     """Raised when rate limit is exceeded (429 Too Many Requests)."""
-
-    def __init__(
-        self,
-        message: str = "Rate limit exceeded. Too many concurrent searches.",
-        retry_after: Optional[int] = None,
-        **kwargs: Any,
-    ):
-        self.retry_after = retry_after
-        if retry_after:
-            message = f"{message} Retry after {retry_after} seconds."
-        super().__init__(message, status_code=429, **kwargs)
+    def __init__(self, message: str = "Rate limit exceeded. Too many concurrent searches.", **kwargs: Any):
+        super().__init__(message, **kwargs)
 
 
-class SearchQuotaError(SplunkError):
+class ServerError(BaseServerError, SplunkError):
+    """Raised for server-side errors (5xx)."""
+    def __init__(self, message: str = "Splunk server error.", **kwargs: Any):
+        super().__init__(message, **kwargs)
+
+
+class SearchQuotaError(ServerError):
     """Raised when search quota is exhausted (503 Service Unavailable)."""
-
-    def __init__(
-        self,
-        message: str = "Search quota exhausted. No available search slots.",
-        **kwargs: Any,
-    ):
+    def __init__(self, message: str = "Search quota exhausted. No available search slots.", **kwargs: Any):
         super().__init__(message, status_code=503, **kwargs)
 
 
 class JobFailedError(SplunkError):
     """Raised when a search job fails."""
-
-    def __init__(
-        self,
-        message: str = "Search job failed.",
-        sid: Optional[str] = None,
-        dispatch_state: Optional[str] = None,
-        **kwargs: Any,
-    ):
+    def __init__(self, message: str = "Search job failed.", sid: Optional[str] = None, dispatch_state: Optional[str] = None, **kwargs: Any):
         self.sid = sid
         self.dispatch_state = dispatch_state
         if sid:
@@ -159,26 +97,9 @@ class JobFailedError(SplunkError):
         super().__init__(message, **kwargs)
 
 
-class ServerError(SplunkError):
-    """Raised for server-side errors (5xx)."""
-
-    def __init__(
-        self,
-        message: str = "Splunk server error.",
-        **kwargs: Any,
-    ):
-        super().__init__(message, **kwargs)
-
-
 def parse_error_response(response: requests.Response) -> Dict[str, Any]:
     """
     Parse error details from Splunk response.
-
-    Args:
-        response: HTTP response object
-
-    Returns:
-        Dictionary with error details
     """
     try:
         data = response.json()
@@ -197,25 +118,11 @@ def parse_error_response(response: requests.Response) -> Dict[str, Any]:
 
 def sanitize_error_message(message: str) -> str:
     """
-    Remove sensitive information from error messages.
-
-    Args:
-        message: Original error message
-
-    Returns:
-        Sanitized message with sensitive data redacted
+    Sanitize error messages by calling the base sanitizer and adding Splunk-specific redactions.
     """
-    # Patterns to redact
-    patterns = [
-        (r"(token[=:]\s*)[^\s&]+", r"\1[REDACTED]"),
-        (r"(password[=:]\s*)[^\s&]+", r"\1[REDACTED]"),
-        (r"(Bearer\s+)[^\s]+", r"\1[REDACTED]"),
-        (r"(Authorization[=:]\s*)[^\s]+", r"\1[REDACTED]"),
-        (r"(api[_-]?key[=:]\s*)[^\s&]+", r"\1[REDACTED]"),
-    ]
-    for pattern, replacement in patterns:
-        message = re.sub(pattern, replacement, message, flags=re.IGNORECASE)
-    return message
+    sanitized = base_sanitize_error_message(message)
+    # Splunk-specific patterns (if any) could be added here
+    return sanitized
 
 
 def handle_splunk_error(
@@ -223,13 +130,6 @@ def handle_splunk_error(
 ) -> None:
     """
     Handle Splunk API error response.
-
-    Args:
-        response: HTTP response object
-        operation: Description of the operation for error context
-
-    Raises:
-        Appropriate SplunkError subclass based on status code
     """
     status_code = response.status_code
     error_info = parse_error_response(response)
@@ -239,6 +139,8 @@ def handle_splunk_error(
     error_kwargs: Dict[str, Any] = {
         "operation": operation,
         "details": details,
+        "status_code": status_code,
+        "response_data": response.text,
     }
 
     if status_code == 400:
@@ -257,79 +159,43 @@ def handle_splunk_error(
             **error_kwargs,
         )
     elif status_code == 503:
-        # Check if it's a search quota error
         if "search" in message.lower() or "quota" in message.lower():
             raise SearchQuotaError(message, **error_kwargs)
-        raise ServerError(message, status_code=status_code, **error_kwargs)
+        raise ServerError(message, **error_kwargs)
     elif status_code >= 500:
-        raise ServerError(message, status_code=status_code, **error_kwargs)
+        raise ServerError(message, **error_kwargs)
     else:
-        raise SplunkError(message, status_code=status_code, **error_kwargs)
+        raise SplunkError(message, **error_kwargs)
 
 
 def print_error(message: str, include_traceback: bool = False) -> None:
     """
     Print error message to stderr with formatting.
-
-    Args:
-        message: Error message to print
-        include_traceback: Whether to include traceback
     """
-    sanitized = sanitize_error_message(message)
-    print(f"\033[91mError:\033[0m {sanitized}", file=sys.stderr)
-    if include_traceback:
-        traceback.print_exc(file=sys.stderr)
+    # This function is now a simple wrapper around the base printer
+    base_print_error(message, show_traceback=include_traceback)
 
 
 def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     Decorator for handling errors in CLI scripts.
-
-    Catches SplunkError exceptions and prints user-friendly messages.
-    Exits with appropriate return code.
-
-    Usage:
-        @handle_errors
-        def main():
-            # Script logic
-            pass
     """
-
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except SplunkError as e:
-            print_error(str(e))
+            # Use base_print_error with colorization
+            base_print_error(f"Splunk Error: {e}", e)
             sys.exit(1)
-        except requests.exceptions.ConnectionError as e:
-            print_error(f"Connection failed: {sanitize_error_message(str(e))}")
-            sys.exit(1)
-        except requests.exceptions.Timeout as e:
-            print_error(f"Request timed out: {sanitize_error_message(str(e))}")
-            sys.exit(1)
-        except KeyboardInterrupt:
-            print("\nOperation cancelled by user.", file=sys.stderr)
-            sys.exit(130)
-        except Exception as e:
-            print_error(
-                f"Unexpected error: {sanitize_error_message(str(e))}",
-                include_traceback=True,
-            )
-            sys.exit(1)
-
-    return wrapper
+    
+    # Wrap with the base handler to catch generic and requests exceptions
+    return base_handle_errors(wrapper)
 
 
 def format_error_for_json(error: SplunkError) -> Dict[str, Any]:
     """
     Format error for JSON output.
-
-    Args:
-        error: SplunkError instance
-
-    Returns:
-        Dictionary suitable for JSON serialization
     """
     return {
         "error": True,
