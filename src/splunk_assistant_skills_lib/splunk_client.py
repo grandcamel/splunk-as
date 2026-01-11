@@ -17,7 +17,7 @@ Features:
 
 import json
 import time
-from typing import Any, Dict, Generator, Iterator, Optional, Union
+from typing import Any, Dict, Generator, Iterator, Optional, Union, cast
 
 import requests
 
@@ -220,13 +220,14 @@ class SplunkClient:
             timeout=timeout,
             operation=operation,
         )
-        return response.json()
+        return cast(Dict[str, Any], response.json())
 
     def post(
         self,
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        json_body: Optional[Dict[str, Any]] = None,
         timeout: Optional[int] = None,
         operation: str = "POST request",
     ) -> Dict[str, Any]:
@@ -237,6 +238,7 @@ class SplunkClient:
             endpoint: API endpoint path
             data: Form data
             params: URL query parameters
+            json_body: JSON body (alternative to form data)
             timeout: Override default timeout
             operation: Description for error messages
 
@@ -247,11 +249,12 @@ class SplunkClient:
             method="POST",
             endpoint=endpoint,
             data=data,
+            json_body=json_body,
             params=params,
             timeout=timeout,
             operation=operation,
         )
-        return response.json()
+        return cast(Dict[str, Any], response.json())
 
     def put(
         self,
@@ -282,7 +285,7 @@ class SplunkClient:
             timeout=timeout,
             operation=operation,
         )
-        return response.json()
+        return cast(Dict[str, Any], response.json())
 
     def delete(
         self,
@@ -310,7 +313,7 @@ class SplunkClient:
             timeout=timeout,
             operation=operation,
         )
-        return response.json()
+        return cast(Dict[str, Any], response.json())
 
     def get_raw(
         self,
@@ -487,7 +490,7 @@ class SplunkClient:
         if response.status_code >= 400:
             handle_splunk_error(response, operation)
 
-        return response.json()
+        return cast(Dict[str, Any], response.json())
 
     def upload_lookup(
         self,
@@ -690,14 +693,14 @@ class SplunkClient:
         """Get Splunk server information."""
         response = self.get("/server/info", operation="get server info")
         if "entry" in response and response["entry"]:
-            return response["entry"][0].get("content", {})
+            return cast(Dict[str, Any], response["entry"][0].get("content", {}))
         return response
 
     def whoami(self) -> Dict[str, Any]:
         """Get current user information."""
         response = self.get("/authentication/current-context", operation="whoami")
         if "entry" in response and response["entry"]:
-            return response["entry"][0].get("content", {})
+            return cast(Dict[str, Any], response["entry"][0].get("content", {}))
         return response
 
     def test_connection(self) -> bool:

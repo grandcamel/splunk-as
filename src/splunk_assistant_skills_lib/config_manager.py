@@ -20,7 +20,7 @@ Environment Variables:
     SPLUNK_DEFAULT_INDEX - Default search index
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from assistant_skills_lib.config_manager import BaseConfigManager
 
@@ -35,7 +35,7 @@ DEFAULT_LATEST_TIME = "now"
 class ConfigManager(BaseConfigManager):
     """Manages Splunk configuration from environment variables and config files."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the configuration manager."""
         super().__init__(profile=None)
 
@@ -90,7 +90,7 @@ class ConfigManager(BaseConfigManager):
         env_overrides = self._get_env_overrides()
         final_config = self._deep_merge(merged, env_overrides)
 
-        return final_config
+        return cast(Dict[str, Any], final_config)
 
     def _get_env_overrides(self) -> Dict[str, Any]:
         """Get configuration overrides from environment variables."""
@@ -202,10 +202,10 @@ def get_splunk_client() -> SplunkClient:
 def get_search_defaults() -> Dict[str, Any]:
     """Get search default settings."""
     config = get_config()
-    return config.get("search_defaults", {})
+    return cast(Dict[str, Any], config.get("search_defaults", {}))
 
 
 def get_api_settings() -> Dict[str, Any]:
     """Get API settings."""
     config = get_config()
-    return config.get("api", {})
+    return cast(Dict[str, Any], config.get("api", {}))

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import click
 
 from splunk_assistant_skills_lib import (
@@ -26,7 +28,7 @@ from ..cli_utils import get_time_bounds, handle_cli_errors, parse_comma_list
 
 
 @click.group()
-def search():
+def search() -> None:
     """SPL query execution commands.
 
     Execute Splunk searches in various modes: oneshot, normal, or blocking.
@@ -50,7 +52,16 @@ def search():
 @click.option("--output-file", help="Write results to file (for csv).")
 @click.pass_context
 @handle_cli_errors
-def oneshot(ctx, spl, earliest, latest, count, fields, output, output_file):
+def oneshot(
+    ctx: click.Context,
+    spl: str,
+    earliest: str | None,
+    latest: str | None,
+    count: int | None,
+    fields: str | None,
+    output: str,
+    output_file: str | None,
+) -> None:
     """Execute a oneshot search (results returned inline).
 
     Best for ad-hoc queries with results under 50,000 rows.
@@ -100,7 +111,15 @@ def oneshot(ctx, spl, earliest, latest, count, fields, output, output_file):
 )
 @click.pass_context
 @handle_cli_errors
-def normal(ctx, spl, earliest, latest, wait, timeout, output):
+def normal(
+    ctx: click.Context,
+    spl: str,
+    earliest: str | None,
+    latest: str | None,
+    wait: bool,
+    timeout: int,
+    output: str,
+) -> None:
     """Execute a normal (async) search.
 
     Returns a search ID (SID) immediately. Use 'job status' to check progress.
@@ -161,7 +180,14 @@ def normal(ctx, spl, earliest, latest, wait, timeout, output):
 )
 @click.pass_context
 @handle_cli_errors
-def blocking(ctx, spl, earliest, latest, timeout, output):
+def blocking(
+    ctx: click.Context,
+    spl: str,
+    earliest: str | None,
+    latest: str | None,
+    timeout: int,
+    output: str,
+) -> None:
     """Execute a blocking search (waits for completion).
 
     Example:
@@ -212,7 +238,7 @@ def blocking(ctx, spl, earliest, latest, timeout, output):
 )
 @click.pass_context
 @handle_cli_errors
-def validate(ctx, spl, suggestions, output):
+def validate(ctx: click.Context, spl: str, suggestions: bool, output: str) -> None:
     """Validate SPL syntax without executing.
 
     Example:
@@ -223,7 +249,7 @@ def validate(ctx, spl, suggestions, output):
     complexity = estimate_search_complexity(spl)
     _, optimization_suggestions = optimize_spl(spl)
 
-    result = {
+    result: dict[str, Any] = {
         "valid": is_valid,
         "issues": issues,
         "commands": [{"name": c[0], "args": c[1]} for c in commands],
@@ -267,7 +293,15 @@ def validate(ctx, spl, suggestions, output):
 @click.option("--output-file", help="Write results to file.")
 @click.pass_context
 @handle_cli_errors
-def results(ctx, sid, count, offset, fields, output, output_file):
+def results(
+    ctx: click.Context,
+    sid: str,
+    count: int,
+    offset: int,
+    fields: str | None,
+    output: str,
+    output_file: str | None,
+) -> None:
     """Get results from a completed search job.
 
     Example:
@@ -300,7 +334,7 @@ def results(ctx, sid, count, offset, fields, output, output_file):
 )
 @click.pass_context
 @handle_cli_errors
-def preview(ctx, sid, count, output):
+def preview(ctx: click.Context, sid: str, count: int, output: str) -> None:
     """Get preview results from a running search job.
 
     Example:
@@ -322,7 +356,9 @@ def preview(ctx, sid, count, output):
         click.echo(f"Preview: {len(results)} results (job may still be running)")
 
 
-def _output_search_results(results, output, output_file, fields_list):
+def _output_search_results(
+    results: list, output: str, output_file: str | None, fields_list: list | None
+) -> None:
     """Helper to output search results in various formats."""
     if output == "json":
         click.echo(format_json(results))

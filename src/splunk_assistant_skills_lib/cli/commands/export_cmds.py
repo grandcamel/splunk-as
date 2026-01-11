@@ -5,6 +5,7 @@ from __future__ import annotations
 import click
 
 from splunk_assistant_skills_lib import (
+    ValidationError,
     build_search,
     get_api_settings,
     get_splunk_client,
@@ -19,7 +20,7 @@ from ..cli_utils import get_time_bounds, handle_cli_errors
 
 
 @click.group()
-def export():
+def export() -> None:
     """Data export and extraction commands.
 
     Export search results in various formats for ETL and analysis.
@@ -44,7 +45,16 @@ def export():
 @click.option("--progress", is_flag=True, help="Show progress.")
 @click.pass_context
 @handle_cli_errors
-def results(ctx, spl, output_file, output_format, earliest, latest, fields, progress):
+def results(
+    ctx: click.Context,
+    spl: str,
+    output_file: str,
+    output_format: str,
+    earliest: str | None,
+    latest: str | None,
+    fields: str | None,
+    progress: bool,
+) -> None:
     """Export results from a search to file.
 
     Example:
@@ -74,6 +84,9 @@ def results(ctx, spl, output_file, output_format, earliest, latest, fields, prog
     sid = response.get("sid")
     if not sid and "entry" in response:
         sid = response["entry"][0].get("name")
+
+    if not sid:
+        raise ValidationError("No SID returned from search job creation")
 
     # Wait for completion
     print_info(f"Waiting for job {sid}...")
@@ -124,7 +137,13 @@ def results(ctx, spl, output_file, output_format, earliest, latest, fields, prog
 @click.option("--count", "-c", type=int, help="Maximum results to export.")
 @click.pass_context
 @handle_cli_errors
-def job(ctx, sid, output_file, output_format, count):
+def job(
+    ctx: click.Context,
+    sid: str,
+    output_file: str,
+    output_format: str,
+    count: int | None,
+) -> None:
     """Export results from an existing search job.
 
     Example:
@@ -162,7 +181,9 @@ def job(ctx, sid, output_file, output_format, count):
 @click.option("--latest", "-l", help="Latest time.")
 @click.pass_context
 @handle_cli_errors
-def estimate(ctx, spl, earliest, latest):
+def estimate(
+    ctx: click.Context, spl: str, earliest: str | None, latest: str | None
+) -> None:
     """Estimate the size of an export before running it.
 
     Example:

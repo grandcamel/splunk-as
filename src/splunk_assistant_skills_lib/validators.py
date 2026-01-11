@@ -7,7 +7,7 @@ All validators return the validated value or raise ValidationError.
 """
 
 import re
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from assistant_skills_lib.error_handler import ValidationError
 from assistant_skills_lib.validators import (
@@ -131,27 +131,29 @@ def validate_app_name(app: str) -> str:
 
 def validate_port(port: Union[int, str]) -> int:
     """Validate port number."""
-    return validate_int(port, "port", min_value=1, max_value=65535)
+    return cast(int, validate_int(port, "port", min_value=1, max_value=65535))
 
 
 def validate_url(url: str, require_https: bool = False) -> str:
     """Validate URL format using the base validator."""
-    return base_validate_url(url, "url", require_https)
+    return cast(str, base_validate_url(url, "url", require_https))
 
 
 def validate_output_mode(mode: str) -> str:
     """Validate Splunk output mode."""
-    return validate_choice(mode, ["json", "csv", "xml", "raw"], "output_mode")
+    return cast(
+        str, validate_choice(mode, ["json", "csv", "xml", "raw"], "output_mode")
+    )
 
 
 def validate_count(count: Union[int, str]) -> int:
     """Validate result count parameter."""
-    return validate_int(count, "count", min_value=0)
+    return cast(int, validate_int(count, "count", min_value=0))
 
 
 def validate_offset(offset: Union[int, str]) -> int:
     """Validate result offset parameter."""
-    return validate_int(offset, "offset", min_value=0)
+    return cast(int, validate_int(offset, "offset", min_value=0))
 
 
 def validate_field_list(fields: Union[str, List[str]]) -> List[str]:
@@ -173,4 +175,6 @@ def validate_field_list(fields: Union[str, List[str]]) -> List[str]:
 
 def validate_search_mode(mode: str) -> str:
     """Validate search execution mode."""
-    return validate_choice(mode, ["normal", "blocking", "oneshot"], "exec_mode")
+    return cast(
+        str, validate_choice(mode, ["normal", "blocking", "oneshot"], "exec_mode")
+    )

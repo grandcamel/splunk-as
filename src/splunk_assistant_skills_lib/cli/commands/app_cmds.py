@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import click
 
 from splunk_assistant_skills_lib import (
@@ -16,7 +18,7 @@ from ..cli_utils import handle_cli_errors
 
 
 @click.group()
-def app():
+def app() -> None:
     """Application management.
 
     List, install, and manage Splunk apps.
@@ -34,7 +36,7 @@ def app():
 )
 @click.pass_context
 @handle_cli_errors
-def list_apps(ctx, output):
+def list_apps(ctx: click.Context, output: str) -> None:
     """List all installed apps.
 
     Example:
@@ -74,7 +76,7 @@ def list_apps(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def get(ctx, name, output):
+def get(ctx: click.Context, name: str, output: str) -> None:
     """Get app details.
 
     Example:
@@ -103,7 +105,7 @@ def get(ctx, name, output):
 @click.argument("name")
 @click.pass_context
 @handle_cli_errors
-def enable(ctx, name):
+def enable(ctx: click.Context, name: str) -> None:
     """Enable an app.
 
     Example:
@@ -121,7 +123,7 @@ def enable(ctx, name):
 @click.argument("name")
 @click.pass_context
 @handle_cli_errors
-def disable(ctx, name):
+def disable(ctx: click.Context, name: str) -> None:
     """Disable an app.
 
     Example:
@@ -140,7 +142,7 @@ def disable(ctx, name):
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def uninstall(ctx, name, force):
+def uninstall(ctx: click.Context, name: str, force: bool) -> None:
     """Uninstall an app.
 
     Example:
@@ -163,7 +165,9 @@ def uninstall(ctx, name, force):
 @click.option("--update/--no-update", default=False, help="Update if exists.")
 @click.pass_context
 @handle_cli_errors
-def install(ctx, package_path, name, update):
+def install(
+    ctx: click.Context, package_path: str, name: str | None, update: bool
+) -> None:
     """Install an app from a package.
 
     Example:
@@ -171,7 +175,7 @@ def install(ctx, package_path, name, update):
     """
     client = get_splunk_client()
 
-    data = {"name": package_path}
+    data: dict[str, Any] = {"name": package_path}
     if name:
         data["name"] = name
     if update:

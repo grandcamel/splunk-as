@@ -5,7 +5,7 @@ Splunk Output Formatters
 Provides formatting utilities for Splunk data and command output.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 # Import generic formatters and color utilities from the base library
 from assistant_skills_lib.formatters import (
@@ -72,7 +72,7 @@ def format_search_results(
     if truncated:
         output += f"\n\n... (showing first {max_results} of more results)"
 
-    return output
+    return cast(str, output)
 
 
 def format_job_status(job: Dict[str, Any]) -> str:
@@ -163,7 +163,7 @@ def format_splunk_time(time_str: str) -> str:
     """
     Format Splunk timestamp for display.
     """
-    return format_timestamp(time_str, "%Y-%m-%d %H:%M:%S")
+    return cast(str, format_timestamp(time_str, "%Y-%m-%d %H:%M:%S"))
 
 
 def format_duration(seconds: float) -> str:

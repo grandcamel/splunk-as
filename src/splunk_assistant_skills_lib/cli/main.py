@@ -17,7 +17,7 @@ from splunk_assistant_skills_lib import __version__
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress non-essential output.")
 @click.pass_context
-def cli(ctx, output, verbose, quiet):
+def cli(ctx: click.Context, output: str, verbose: bool, quiet: bool) -> None:
     """Splunk Assistant Skills CLI.
 
     A command-line interface for interacting with Splunk through
@@ -43,7 +43,7 @@ def cli(ctx, output, verbose, quiet):
         click.echo(ctx.get_help())
 
 
-def register_commands():
+def register_commands() -> None:
     """Register all command groups with the CLI."""
     from .commands.admin_cmds import admin
     from .commands.alert_cmds import alert

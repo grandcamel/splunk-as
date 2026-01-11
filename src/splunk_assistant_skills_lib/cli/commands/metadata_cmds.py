@@ -10,7 +10,7 @@ from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
-def metadata():
+def metadata() -> None:
     """Index, source, and sourcetype discovery.
 
     Explore and discover metadata about your Splunk environment.
@@ -31,7 +31,7 @@ def metadata():
 )
 @click.pass_context
 @handle_cli_errors
-def indexes(ctx, filter_pattern, output):
+def indexes(ctx: click.Context, filter_pattern: str | None, output: str) -> None:
     """List all indexes.
 
     Example:
@@ -71,7 +71,7 @@ def indexes(ctx, filter_pattern, output):
 )
 @click.pass_context
 @handle_cli_errors
-def index_info(ctx, index_name, output):
+def index_info(ctx: click.Context, index_name: str, output: str) -> None:
     """Get detailed information about an index.
 
     Example:
@@ -106,7 +106,13 @@ def index_info(ctx, index_name, output):
 )
 @click.pass_context
 @handle_cli_errors
-def search(ctx, metadata_type, index, earliest, output):
+def search(
+    ctx: click.Context,
+    metadata_type: str,
+    index: str | None,
+    earliest: str,
+    output: str,
+) -> None:
     """Search metadata (hosts, sources, sourcetypes).
 
     Examples:
@@ -155,7 +161,13 @@ def search(ctx, metadata_type, index, earliest, output):
 )
 @click.pass_context
 @handle_cli_errors
-def fields(ctx, index_name, sourcetype, earliest, output):
+def fields(
+    ctx: click.Context,
+    index_name: str,
+    sourcetype: str | None,
+    earliest: str,
+    output: str,
+) -> None:
     """Get field summary for an index.
 
     Example:
@@ -207,7 +219,7 @@ def fields(ctx, index_name, sourcetype, earliest, output):
 )
 @click.pass_context
 @handle_cli_errors
-def sourcetypes(ctx, index, output):
+def sourcetypes(ctx: click.Context, index: str | None, output: str) -> None:
     """List sourcetypes. Alias for 'metadata search sourcetypes'."""
     ctx.invoke(search, metadata_type="sourcetypes", index=index, output=output)
 
@@ -223,6 +235,6 @@ def sourcetypes(ctx, index, output):
 )
 @click.pass_context
 @handle_cli_errors
-def sources(ctx, index, output):
+def sources(ctx: click.Context, index: str | None, output: str) -> None:
     """List sources. Alias for 'metadata search sources'."""
     ctx.invoke(search, metadata_type="sources", index=index, output=output)

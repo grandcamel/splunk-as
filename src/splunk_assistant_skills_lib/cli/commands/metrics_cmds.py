@@ -15,7 +15,7 @@ from ..cli_utils import get_time_bounds, handle_cli_errors, output_results
 
 
 @click.group()
-def metrics():
+def metrics() -> None:
     """Real-time metrics operations.
 
     Query and analyze Splunk metrics using mstats and mcatalog.
@@ -34,7 +34,7 @@ def metrics():
 )
 @click.pass_context
 @handle_cli_errors
-def list_metrics(ctx, index, output):
+def list_metrics(ctx: click.Context, index: str | None, output: str) -> None:
     """List available metrics.
 
     Example:
@@ -75,7 +75,7 @@ def list_metrics(ctx, index, output):
 )
 @click.pass_context
 @handle_cli_errors
-def indexes(ctx, output):
+def indexes(ctx: click.Context, output: str) -> None:
     """List metrics indexes.
 
     Example:
@@ -122,7 +122,17 @@ def indexes(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def mstats(ctx, metric_name, index, earliest, latest, span, agg, split_by, output):
+def mstats(
+    ctx: click.Context,
+    metric_name: str,
+    index: str | None,
+    earliest: str,
+    latest: str,
+    span: str,
+    agg: str,
+    split_by: str | None,
+    output: str,
+) -> None:
     """Query metrics using mstats.
 
     Example:
@@ -173,7 +183,9 @@ def mstats(ctx, metric_name, index, earliest, latest, span, agg, split_by, outpu
 )
 @click.pass_context
 @handle_cli_errors
-def mcatalog(ctx, index, metric, output):
+def mcatalog(
+    ctx: click.Context, index: str | None, metric: str | None, output: str
+) -> None:
     """Explore metrics catalog.
 
     Example:

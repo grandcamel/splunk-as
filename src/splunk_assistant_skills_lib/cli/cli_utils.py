@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import json
 import sys
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, cast
 
 import click
 
@@ -98,7 +98,7 @@ def parse_json_arg(value: str | None) -> dict[str, Any] | None:
     if not value:
         return None
     try:
-        return json.loads(value)
+        return cast(dict[str, Any], json.loads(value))
     except json.JSONDecodeError as e:
         raise click.BadParameter(f"Invalid JSON: {e}")
 

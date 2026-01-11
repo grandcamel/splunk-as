@@ -9,7 +9,7 @@ for Splunk REST API interactions.
 import functools
 import json
 import sys
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 
 import requests
 from assistant_skills_lib.error_handler import (
@@ -167,7 +167,7 @@ def sanitize_error_message(message: str) -> str:
     """
     sanitized = base_sanitize_error_message(message)
     # Splunk-specific patterns (if any) could be added here
-    return sanitized
+    return cast(str, sanitized)
 
 
 def handle_splunk_error(
@@ -236,7 +236,7 @@ def handle_errors(func: Callable[..., Any]) -> Callable[..., Any]:
             sys.exit(1)
 
     # Wrap with the base handler to catch generic and requests exceptions
-    return base_handle_errors(wrapper)
+    return cast(Callable[..., Any], base_handle_errors(wrapper))
 
 
 def format_error_for_json(error: SplunkError) -> Dict[str, Any]:

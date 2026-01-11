@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import click
 
@@ -17,7 +18,7 @@ from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
-def kvstore():
+def kvstore() -> None:
     """Key-Value Store operations.
 
     Manage KV Store collections and records.
@@ -36,7 +37,7 @@ def kvstore():
 )
 @click.pass_context
 @handle_cli_errors
-def list_collections(ctx, app, output):
+def list_collections(ctx: click.Context, app: str, output: str) -> None:
     """List all KV Store collections.
 
     Example:
@@ -61,7 +62,7 @@ def list_collections(ctx, app, output):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def create(ctx, name, app):
+def create(ctx: click.Context, name: str, app: str) -> None:
     """Create a new KV Store collection.
 
     Example:
@@ -82,7 +83,7 @@ def create(ctx, name, app):
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, name, app, force):
+def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
     """Delete a KV Store collection.
 
     Example:
@@ -108,7 +109,7 @@ def delete(ctx, name, app, force):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def insert(ctx, collection, data, app):
+def insert(ctx: click.Context, collection: str, data: str, app: str) -> None:
     """Insert a record into a collection.
 
     Example:
@@ -119,7 +120,7 @@ def insert(ctx, collection, data, app):
     record = json.loads(data)
     response = client.post(
         f"/servicesNS/nobody/{app}/storage/collections/data/{collection}",
-        json=record,
+        json_body=record,
         operation="insert record",
     )
 
@@ -141,14 +142,21 @@ def insert(ctx, collection, data, app):
 )
 @click.pass_context
 @handle_cli_errors
-def query(ctx, collection, app, query, limit, output):
+def query(
+    ctx: click.Context,
+    collection: str,
+    app: str,
+    query: str | None,
+    limit: int,
+    output: str,
+) -> None:
     """Query records from a collection.
 
     Example:
         splunk-as kvstore query my_collection --query '{"status": "active"}'
     """
     client = get_splunk_client()
-    params = {"limit": limit}
+    params: dict[str, Any] = {"limit": limit}
     if query:
         params["query"] = query
 
@@ -157,7 +165,7 @@ def query(ctx, collection, app, query, limit, output):
         params=params,
         operation="query records",
     )
-    records = response if isinstance(response, list) else []
+    records: list[dict[str, Any]] = response if isinstance(response, list) else []
     output_results(records[:50], output, success_msg=f"Found {len(records)} records")
 
 
@@ -167,7 +175,7 @@ def query(ctx, collection, app, query, limit, output):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def get(ctx, collection, key, app):
+def get(ctx: click.Context, collection: str, key: str, app: str) -> None:
     """Get a record by key.
 
     Example:
@@ -188,7 +196,7 @@ def get(ctx, collection, key, app):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def update(ctx, collection, key, data, app):
+def update(ctx: click.Context, collection: str, key: str, data: str, app: str) -> None:
     """Update a record by key.
 
     Example:
@@ -199,7 +207,7 @@ def update(ctx, collection, key, data, app):
     record = json.loads(data)
     client.post(
         f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
-        json=record,
+        json_body=record,
         operation="update record",
     )
     print_success(f"Updated record: {key}")
@@ -211,7 +219,7 @@ def update(ctx, collection, key, data, app):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def delete_record(ctx, collection, key, app):
+def delete_record(ctx: click.Context, collection: str, key: str, app: str) -> None:
     """Delete a record by key.
 
     Example:

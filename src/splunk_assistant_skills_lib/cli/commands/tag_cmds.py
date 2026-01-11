@@ -15,7 +15,7 @@ from ..cli_utils import handle_cli_errors
 
 
 @click.group()
-def tag():
+def tag() -> None:
     """Knowledge object tagging.
 
     Manage tags on Splunk knowledge objects.
@@ -34,7 +34,7 @@ def tag():
 )
 @click.pass_context
 @handle_cli_errors
-def list_tags(ctx, app, output):
+def list_tags(ctx: click.Context, app: str | None, output: str) -> None:
     """List all tags.
 
     Example:
@@ -80,7 +80,7 @@ def list_tags(ctx, app, output):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def add(ctx, field_value_pair, tag_name, app):
+def add(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -> None:
     """Add a tag to a field value.
 
     Example:
@@ -115,7 +115,7 @@ def add(ctx, field_value_pair, tag_name, app):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def remove(ctx, field_value_pair, tag_name, app):
+def remove(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -> None:
     """Remove a tag from a field value.
 
     Example:
@@ -154,7 +154,9 @@ def remove(ctx, field_value_pair, tag_name, app):
 )
 @click.pass_context
 @handle_cli_errors
-def search(ctx, tag_name, index, earliest, output):
+def search(
+    ctx: click.Context, tag_name: str, index: str | None, earliest: str, output: str
+) -> None:
     """Search for events with a specific tag.
 
     Example:

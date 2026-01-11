@@ -10,7 +10,7 @@ from ..cli_utils import build_endpoint, handle_cli_errors, output_results
 
 
 @click.group()
-def alert():
+def alert() -> None:
     """Alert management and monitoring.
 
     Monitor and manage Splunk alerts.
@@ -29,7 +29,7 @@ def alert():
 )
 @click.pass_context
 @handle_cli_errors
-def list_alerts(ctx, app, output):
+def list_alerts(ctx: click.Context, app: str | None, output: str) -> None:
     """List all alerts (scheduled searches with alert actions).
 
     Example:
@@ -67,7 +67,7 @@ def list_alerts(ctx, app, output):
 )
 @click.pass_context
 @handle_cli_errors
-def get(ctx, name, app, output):
+def get(ctx: click.Context, name: str, app: str, output: str) -> None:
     """Get alert details.
 
     Example:
@@ -104,7 +104,7 @@ def get(ctx, name, app, output):
 )
 @click.pass_context
 @handle_cli_errors
-def triggered(ctx, app, count, output):
+def triggered(ctx: click.Context, app: str | None, count: int, output: str) -> None:
     """List triggered alerts.
 
     Example:
@@ -133,7 +133,7 @@ def triggered(ctx, app, count, output):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def acknowledge(ctx, name, app):
+def acknowledge(ctx: click.Context, name: str, app: str) -> None:
     """Acknowledge a triggered alert.
 
     Example:
@@ -172,7 +172,15 @@ def acknowledge(ctx, name, app):
 @click.option("--threshold", type=int, default=1, help="Alert threshold.")
 @click.pass_context
 @handle_cli_errors
-def create(ctx, name, search, app, cron, condition, threshold):
+def create(
+    ctx: click.Context,
+    name: str,
+    search: str,
+    app: str,
+    cron: str,
+    condition: str,
+    threshold: int,
+) -> None:
     """Create a new alert.
 
     Example:

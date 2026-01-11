@@ -15,7 +15,7 @@ from ..cli_utils import handle_cli_errors, output_results
 
 
 @click.group()
-def security():
+def security() -> None:
     """Token management and RBAC.
 
     Manage authentication tokens, users, and permissions.
@@ -33,7 +33,7 @@ def security():
 )
 @click.pass_context
 @handle_cli_errors
-def whoami(ctx, output):
+def whoami(ctx: click.Context, output: str) -> None:
     """Get current user information.
 
     Example:
@@ -64,7 +64,7 @@ def whoami(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def list_tokens(ctx, output):
+def list_tokens(ctx: click.Context, output: str) -> None:
     """List authentication tokens.
 
     Example:
@@ -91,7 +91,9 @@ def list_tokens(ctx, output):
 @click.option("--expires", type=int, help="Expiration time in seconds.")
 @click.pass_context
 @handle_cli_errors
-def create_token(ctx, name, audience, expires):
+def create_token(
+    ctx: click.Context, name: str, audience: str | None, expires: int | None
+) -> None:
     """Create a new authentication token.
 
     Example:
@@ -120,7 +122,7 @@ def create_token(ctx, name, audience, expires):
 @click.argument("token_id")
 @click.pass_context
 @handle_cli_errors
-def delete_token(ctx, token_id):
+def delete_token(ctx: click.Context, token_id: str) -> None:
     """Delete an authentication token.
 
     Example:
@@ -141,7 +143,7 @@ def delete_token(ctx, token_id):
 )
 @click.pass_context
 @handle_cli_errors
-def list_users(ctx, output):
+def list_users(ctx: click.Context, output: str) -> None:
     """List all users.
 
     Example:
@@ -171,7 +173,7 @@ def list_users(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def list_roles(ctx, output):
+def list_roles(ctx: click.Context, output: str) -> None:
     """List all roles.
 
     Example:
@@ -202,7 +204,7 @@ def list_roles(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def capabilities(ctx, output):
+def capabilities(ctx: click.Context, output: str) -> None:
     """Get current user capabilities.
 
     Example:
@@ -236,7 +238,7 @@ def capabilities(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def acl(ctx, path, output):
+def acl(ctx: click.Context, path: str, output: str) -> None:
     """Get ACL for a resource.
 
     Example:
@@ -265,7 +267,7 @@ def acl(ctx, path, output):
 @click.argument("capability")
 @click.pass_context
 @handle_cli_errors
-def check(ctx, capability):
+def check(ctx: click.Context, capability: str) -> None:
     """Check if current user has a capability.
 
     Example:

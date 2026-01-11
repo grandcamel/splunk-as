@@ -16,7 +16,7 @@ from ..cli_utils import build_endpoint, handle_cli_errors, output_results
 
 
 @click.group()
-def savedsearch():
+def savedsearch() -> None:
     """Saved search and report management.
 
     Create, run, and manage saved searches and reports.
@@ -36,7 +36,9 @@ def savedsearch():
 )
 @click.pass_context
 @handle_cli_errors
-def list_searches(ctx, app, owner, output):
+def list_searches(
+    ctx: click.Context, app: str | None, owner: str | None, output: str
+) -> None:
     """List all saved searches.
 
     Example:
@@ -72,7 +74,7 @@ def list_searches(ctx, app, owner, output):
 )
 @click.pass_context
 @handle_cli_errors
-def get(ctx, name, app, output):
+def get(ctx: click.Context, name: str, app: str, output: str) -> None:
     """Get a saved search by name.
 
     Example:
@@ -99,7 +101,14 @@ def get(ctx, name, app, output):
 @click.option("--description", help="Description.")
 @click.pass_context
 @handle_cli_errors
-def create(ctx, name, search, app, cron, description):
+def create(
+    ctx: click.Context,
+    name: str,
+    search: str,
+    app: str,
+    cron: str | None,
+    description: str | None,
+) -> None:
     """Create a new saved search.
 
     Example:
@@ -107,7 +116,7 @@ def create(ctx, name, search, app, cron, description):
     """
     client = get_splunk_client()
 
-    data = {
+    data: dict[str, str | bool] = {
         "name": name,
         "search": search,
     }
@@ -135,7 +144,14 @@ def create(ctx, name, search, app, cron, description):
 @click.option("--description", help="New description.")
 @click.pass_context
 @handle_cli_errors
-def update(ctx, name, app, search, cron, description):
+def update(
+    ctx: click.Context,
+    name: str,
+    app: str,
+    search: str | None,
+    cron: str | None,
+    description: str | None,
+) -> None:
     """Update a saved search.
 
     Example:
@@ -176,7 +192,7 @@ def update(ctx, name, app, search, cron, description):
 )
 @click.pass_context
 @handle_cli_errors
-def run(ctx, name, app, wait, output):
+def run(ctx: click.Context, name: str, app: str, wait: bool, output: str) -> None:
     """Run a saved search.
 
     Example:
@@ -201,7 +217,7 @@ def run(ctx, name, app, wait, output):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def enable(ctx, name, app):
+def enable(ctx: click.Context, name: str, app: str) -> None:
     """Enable a saved search.
 
     Example:
@@ -221,7 +237,7 @@ def enable(ctx, name, app):
 @click.option("--app", "-a", default="search", help="App context.")
 @click.pass_context
 @handle_cli_errors
-def disable(ctx, name, app):
+def disable(ctx: click.Context, name: str, app: str) -> None:
     """Disable a saved search.
 
     Example:
@@ -242,7 +258,7 @@ def disable(ctx, name, app):
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, name, app, force):
+def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
     """Delete a saved search.
 
     Example:

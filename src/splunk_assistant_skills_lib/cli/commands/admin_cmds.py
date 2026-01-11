@@ -12,7 +12,7 @@ from ..cli_utils import build_endpoint, handle_cli_errors, output_results
 
 
 @click.group()
-def admin():
+def admin() -> None:
     """Server administration and REST API access.
 
     Check server status, health, and make generic REST calls.
@@ -30,7 +30,7 @@ def admin():
 )
 @click.pass_context
 @handle_cli_errors
-def info(ctx, output):
+def info(ctx: click.Context, output: str) -> None:
     """Get server information.
 
     Example:
@@ -63,7 +63,7 @@ def info(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def status(ctx, output):
+def status(ctx: click.Context, output: str) -> None:
     """Get server status.
 
     Example:
@@ -90,7 +90,7 @@ def status(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def health(ctx, output):
+def health(ctx: click.Context, output: str) -> None:
     """Get server health status.
 
     Example:
@@ -119,7 +119,7 @@ def health(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def list_users(ctx, output):
+def list_users(ctx: click.Context, output: str) -> None:
     """List all users.
 
     Example:
@@ -150,7 +150,7 @@ def list_users(ctx, output):
 )
 @click.pass_context
 @handle_cli_errors
-def list_roles(ctx, output):
+def list_roles(ctx: click.Context, output: str) -> None:
     """List all roles.
 
     Example:
@@ -178,7 +178,9 @@ def list_roles(ctx, output):
 @click.option("--owner", help="Owner context.")
 @click.pass_context
 @handle_cli_errors
-def rest_get(ctx, endpoint, app, owner):
+def rest_get(
+    ctx: click.Context, endpoint: str, app: str | None, owner: str | None
+) -> None:
     """Make a GET request to a REST endpoint.
 
     Example:
@@ -197,7 +199,13 @@ def rest_get(ctx, endpoint, app, owner):
 @click.option("--owner", help="Owner context.")
 @click.pass_context
 @handle_cli_errors
-def rest_post(ctx, endpoint, data, app, owner):
+def rest_post(
+    ctx: click.Context,
+    endpoint: str,
+    data: str | None,
+    app: str | None,
+    owner: str | None,
+) -> None:
     """Make a POST request to a REST endpoint.
 
     Example:

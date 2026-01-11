@@ -28,7 +28,7 @@ from ..cli_utils import get_time_bounds, handle_cli_errors
 
 
 @click.group()
-def job():
+def job() -> None:
     """Search job lifecycle management.
 
     Create, monitor, control, and clean up Splunk search jobs.
@@ -56,7 +56,15 @@ def job():
 )
 @click.pass_context
 @handle_cli_errors
-def create(ctx, spl, earliest, latest, exec_mode, app, output):
+def create(
+    ctx: click.Context,
+    spl: str,
+    earliest: str | None,
+    latest: str | None,
+    exec_mode: str,
+    app: str | None,
+    output: str,
+) -> None:
     """Create a new search job.
 
     Example:
@@ -122,7 +130,7 @@ def create(ctx, spl, earliest, latest, exec_mode, app, output):
 )
 @click.pass_context
 @handle_cli_errors
-def status(ctx, sid, output):
+def status(ctx: click.Context, sid: str, output: str) -> None:
     """Get the status of a search job.
 
     Example:
@@ -164,7 +172,7 @@ def status(ctx, sid, output):
 )
 @click.pass_context
 @handle_cli_errors
-def list_jobs_cmd(ctx, count, output):
+def list_jobs_cmd(ctx: click.Context, count: int, output: str) -> None:
     """List search jobs.
 
     Example:
@@ -215,7 +223,7 @@ def list_jobs_cmd(ctx, count, output):
 )
 @click.pass_context
 @handle_cli_errors
-def poll(ctx, sid, timeout, quiet, output):
+def poll(ctx: click.Context, sid: str, timeout: int, quiet: bool, output: str) -> None:
     """Poll a job until completion.
 
     Example:
@@ -254,7 +262,7 @@ def poll(ctx, sid, timeout, quiet, output):
 @click.argument("sid")
 @click.pass_context
 @handle_cli_errors
-def cancel(ctx, sid):
+def cancel(ctx: click.Context, sid: str) -> None:
     """Cancel a running search job.
 
     Example:
@@ -270,7 +278,7 @@ def cancel(ctx, sid):
 @click.argument("sid")
 @click.pass_context
 @handle_cli_errors
-def pause(ctx, sid):
+def pause(ctx: click.Context, sid: str) -> None:
     """Pause a running search job.
 
     Example:
@@ -286,7 +294,7 @@ def pause(ctx, sid):
 @click.argument("sid")
 @click.pass_context
 @handle_cli_errors
-def unpause(ctx, sid):
+def unpause(ctx: click.Context, sid: str) -> None:
     """Resume a paused search job.
 
     Example:
@@ -302,7 +310,7 @@ def unpause(ctx, sid):
 @click.argument("sid")
 @click.pass_context
 @handle_cli_errors
-def finalize(ctx, sid):
+def finalize(ctx: click.Context, sid: str) -> None:
     """Finalize a search job (stop and return current results).
 
     Example:
@@ -318,7 +326,7 @@ def finalize(ctx, sid):
 @click.argument("sid")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, sid):
+def delete(ctx: click.Context, sid: str) -> None:
     """Delete a search job.
 
     Example:
@@ -335,7 +343,7 @@ def delete(ctx, sid):
 @click.argument("ttl_value", type=int)
 @click.pass_context
 @handle_cli_errors
-def ttl(ctx, sid, ttl_value):
+def ttl(ctx: click.Context, sid: str, ttl_value: int) -> None:
     """Set the TTL (time-to-live) for a search job.
 
     Example:

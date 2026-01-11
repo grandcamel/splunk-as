@@ -19,7 +19,7 @@ from ..cli_utils import build_endpoint, handle_cli_errors
 
 
 @click.group()
-def lookup():
+def lookup() -> None:
     """CSV and lookup file management.
 
     Upload, download, and manage lookup files in Splunk.
@@ -38,7 +38,7 @@ def lookup():
 )
 @click.pass_context
 @handle_cli_errors
-def list_lookups(ctx, app, output):
+def list_lookups(ctx: click.Context, app: str | None, output: str) -> None:
     """List all lookup files.
 
     Example:
@@ -81,7 +81,9 @@ def list_lookups(ctx, app, output):
 @click.option("--count", "-c", type=int, default=100, help="Maximum rows to show.")
 @click.pass_context
 @handle_cli_errors
-def get(ctx, lookup_name, app, output, count):
+def get(
+    ctx: click.Context, lookup_name: str, app: str, output: str, count: int
+) -> None:
     """Get contents of a lookup file.
 
     Example:
@@ -119,7 +121,9 @@ def get(ctx, lookup_name, app, output, count):
 @click.option("--output-file", "-o", help="Output file path.")
 @click.pass_context
 @handle_cli_errors
-def download(ctx, lookup_name, app, output_file):
+def download(
+    ctx: click.Context, lookup_name: str, app: str, output_file: str | None
+) -> None:
     """Download a lookup file.
 
     Example:
@@ -131,7 +135,7 @@ def download(ctx, lookup_name, app, output_file):
 
     # Stream lookup contents using export endpoint
     search = f"| inputlookup {lookup_name}"
-    response = client.post(
+    content = client.post_raw(
         "/search/jobs/oneshot",
         data={
             "search": search,
@@ -140,15 +144,11 @@ def download(ctx, lookup_name, app, output_file):
             "count": 0,  # All rows
         },
         operation="download lookup",
-        raw_response=True,
     )
 
     # Write to file
     with open(output_file, "wb") as f:
-        if hasattr(response, "content"):
-            f.write(response.content)
-        else:
-            f.write(str(response).encode())
+        f.write(content)
 
     print_success(f"Downloaded to {output_file}")
 
@@ -159,7 +159,7 @@ def download(ctx, lookup_name, app, output_file):
 @click.option("--name", "-n", help="Lookup name (defaults to filename).")
 @click.pass_context
 @handle_cli_errors
-def upload(ctx, file_path, app, name):
+def upload(ctx: click.Context, file_path: str, app: str, name: str | None) -> None:
     """Upload a lookup file.
 
     Example:
@@ -181,7 +181,7 @@ def upload(ctx, file_path, app, name):
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def delete(ctx, lookup_name, app, force):
+def delete(ctx: click.Context, lookup_name: str, app: str, force: bool) -> None:
     """Delete a lookup file.
 
     Example:
