@@ -20,22 +20,32 @@ pytest tests/test_validators.py
 # Run a specific test
 pytest tests/test_validators.py::test_validate_sid
 
-# Format code
+# Format code (always run before committing)
 black src tests
 isort src tests
 
 # Type checking
 mypy src --ignore-missing-imports
+
+# CLI
+splunk-as --help
+splunk-as search oneshot "index=main | head 10"
 ```
 
 ## Architecture
 
 This is a Python library for interacting with the Splunk REST API. The package is located at `src/splunk_assistant_skills_lib/` and exports all public APIs from `__init__.py`.
 
+### CLI Module
+
+- **cli/main.py**: Entry point for `splunk-as` command
+- **cli/cli_utils.py**: Shared CLI utilities (`handle_cli_errors`, `build_endpoint`, `output_results`)
+- **cli/commands/**: 13 command groups (search, job, export, metadata, lookup, kvstore, savedsearch, alert, app, security, admin, tag, metrics)
+
 ### Core Modules
 
 - **splunk_client.py**: HTTP client (`SplunkClient`) with retry logic, dual auth (JWT Bearer or Basic), streaming support, and lookup file uploads
-- **config_manager.py**: Multi-source configuration with profile support. Priority: env vars > `.claude/settings.local.json` > `.claude/settings.json` > defaults
+- **config_manager.py**: Multi-source configuration. Priority: env vars > `.claude/settings.local.json` > `.claude/settings.json` > defaults
 - **error_handler.py**: Exception hierarchy (`SplunkError` base class with subclasses for 401/403/404/429/5xx) and `@handle_errors` decorator for CLI scripts
 
 ### Utility Modules
@@ -47,10 +57,11 @@ This is a Python library for interacting with the Splunk REST API. The package i
 
 ### Key Patterns
 
-- Configuration uses profiles for multi-environment support (production/development)
+- Configuration via environment variables (SPLUNK_TOKEN, SPLUNK_SITE_URL, etc.)
 - `get_splunk_client()` is the main entry point - reads config automatically
 - All HTTP errors are converted to typed exceptions via `handle_splunk_error()`
 - Tests use mock fixtures from `tests/conftest.py` (`mock_splunk_client`, `mock_config`)
+- Always run `black` and `isort` before committing
 
 ### Test Markers
 
