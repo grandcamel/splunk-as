@@ -6,7 +6,7 @@ import click
 
 from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success
 
-from ..cli_utils import handle_cli_errors, output_results
+from ..cli_utils import build_endpoint, handle_cli_errors, output_results
 
 
 @click.group()
@@ -30,7 +30,7 @@ def list_alerts(ctx, app, output):
         splunk-as alert list --app search
     """
     client = get_splunk_client()
-    endpoint = f"/servicesNS/-/{app}/saved/searches" if app else "/saved/searches"
+    endpoint = build_endpoint("/saved/searches", app=app)
     response = client.get(endpoint, params={"search": "is_scheduled=1 AND alert.track=1"}, operation="list alerts")
 
     alerts = [
@@ -87,7 +87,7 @@ def triggered(ctx, app, count, output):
         splunk-as alert triggered --app search --count 20
     """
     client = get_splunk_client()
-    endpoint = f"/servicesNS/-/{app}/alerts/fired_alerts" if app else "/alerts/fired_alerts"
+    endpoint = build_endpoint("/alerts/fired_alerts", app=app)
     response = client.get(endpoint, params={"count": count}, operation="list triggered alerts")
 
     alerts = [

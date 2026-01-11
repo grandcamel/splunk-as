@@ -101,9 +101,11 @@ from .spl_helper import (
     validate_spl_syntax,
 )
 from .splunk_client import SplunkClient
-from .time_utils import SNAP_UNITS, TIME_UNITS, epoch_to_iso
-from .time_utils import datetime_to_time_modifier
 from .time_utils import (
+    SNAP_UNITS,
+    TIME_UNITS,
+    datetime_to_time_modifier,
+    epoch_to_iso,
     get_relative_time,
     get_search_time_bounds,
     get_time_range_presets,

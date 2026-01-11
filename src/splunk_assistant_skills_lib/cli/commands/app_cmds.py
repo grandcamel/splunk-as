@@ -34,13 +34,13 @@ def app():
 )
 @click.pass_context
 @handle_cli_errors
-def list_apps(ctx, profile, output):
+def list_apps(ctx, output):
     """List all installed apps.
 
     Example:
         splunk-as app list
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get("/apps/local", operation="list apps")
 
     apps = []
@@ -74,13 +74,13 @@ def list_apps(ctx, profile, output):
 )
 @click.pass_context
 @handle_cli_errors
-def get(ctx, name, profile, output):
+def get(ctx, name, output):
     """Get app details.
 
     Example:
         splunk-as app get search
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     response = client.get(f"/apps/local/{name}", operation="get app")
 
     if "entry" in response and response["entry"]:
@@ -103,13 +103,13 @@ def get(ctx, name, profile, output):
 @click.argument("name")
 @click.pass_context
 @handle_cli_errors
-def enable(ctx, name, profile):
+def enable(ctx, name):
     """Enable an app.
 
     Example:
         splunk-as app enable my_app
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     client.post(
         f"/apps/local/{name}/enable",
         operation="enable app",
@@ -121,13 +121,13 @@ def enable(ctx, name, profile):
 @click.argument("name")
 @click.pass_context
 @handle_cli_errors
-def disable(ctx, name, profile):
+def disable(ctx, name):
     """Disable an app.
 
     Example:
         splunk-as app disable my_app
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     client.post(
         f"/apps/local/{name}/disable",
         operation="disable app",
@@ -140,7 +140,7 @@ def disable(ctx, name, profile):
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation.")
 @click.pass_context
 @handle_cli_errors
-def uninstall(ctx, name, profile, force):
+def uninstall(ctx, name, force):
     """Uninstall an app.
 
     Example:
@@ -152,7 +152,7 @@ def uninstall(ctx, name, profile, force):
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
     client.delete(f"/apps/local/{name}", operation="uninstall app")
     print_success(f"Uninstalled app: {name}")
 
@@ -163,13 +163,13 @@ def uninstall(ctx, name, profile, force):
 @click.option("--update/--no-update", default=False, help="Update if exists.")
 @click.pass_context
 @handle_cli_errors
-def install(ctx, package_path, profile, name, update):
+def install(ctx, package_path, name, update):
     """Install an app from a package.
 
     Example:
         splunk-as app install /path/to/app.tar.gz
     """
-    client = get_splunk_client(profile=profile)
+    client = get_splunk_client()
 
     data = {"name": package_path}
     if name:

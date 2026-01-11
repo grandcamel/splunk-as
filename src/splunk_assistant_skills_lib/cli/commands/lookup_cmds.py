@@ -15,7 +15,7 @@ from splunk_assistant_skills_lib import (
     print_warning,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import build_endpoint, handle_cli_errors
 
 
 @click.group()
@@ -45,11 +45,7 @@ def list_lookups(ctx, app, output):
         splunk-as lookup list --app search
     """
     client = get_splunk_client()
-
-    endpoint = "/data/lookup-table-files"
-    if app:
-        endpoint = f"/servicesNS/-/{app}/data/lookup-table-files"
-
+    endpoint = build_endpoint("/data/lookup-table-files", app=app)
     response = client.get(endpoint, operation="list lookups")
 
     lookups = []

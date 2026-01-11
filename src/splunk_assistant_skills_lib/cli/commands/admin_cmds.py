@@ -8,7 +8,7 @@ import click
 
 from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success
 
-from ..cli_utils import handle_cli_errors, output_results
+from ..cli_utils import build_endpoint, handle_cli_errors, output_results
 
 
 @click.group()
@@ -153,11 +153,7 @@ def rest_get(ctx, endpoint, app, owner):
         splunk-as admin rest-get /services/server/info
     """
     client = get_splunk_client()
-    if app and owner:
-        endpoint = f"/servicesNS/{owner}/{app}{endpoint}"
-    elif app:
-        endpoint = f"/servicesNS/-/{app}{endpoint}"
-
+    endpoint = build_endpoint(endpoint, app=app, owner=owner)
     response = client.get(endpoint, operation=f"GET {endpoint}")
     click.echo(format_json(response))
 
@@ -176,10 +172,7 @@ def rest_post(ctx, endpoint, data, app, owner):
         splunk-as admin rest-post /services/saved/searches -d '{"name": "test"}'
     """
     client = get_splunk_client()
-    if app and owner:
-        endpoint = f"/servicesNS/{owner}/{app}{endpoint}"
-    elif app:
-        endpoint = f"/servicesNS/-/{app}{endpoint}"
+    endpoint = build_endpoint(endpoint, app=app, owner=owner)
 
     post_data = None
     if data:
