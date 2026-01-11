@@ -63,7 +63,6 @@ from .formatters import (
     format_splunk_time,
     format_table,
 )
-from .formatters import print_error as print_format_error
 from .formatters import print_info, print_success, print_warning, supports_color
 from .job_poller import (
     JobProgress,
@@ -112,7 +111,6 @@ from .time_utils import (
     time_to_epoch,
     validate_time_range,
 )
-from .validators import ValidationError as ValidatorValidationError
 from .validators import (
     validate_app_name,
     validate_count,
@@ -170,7 +168,6 @@ __all__ = [
     "validate_offset",
     "validate_field_list",
     "validate_search_mode",
-    "ValidatorValidationError",
     # Formatters
     "Colors",
     "supports_color",
@@ -191,7 +188,6 @@ __all__ = [
     "print_success",
     "print_warning",
     "print_info",
-    "print_format_error",
     # SPL Helper
     "GENERATING_COMMANDS",
     "TRANSFORMING_COMMANDS",

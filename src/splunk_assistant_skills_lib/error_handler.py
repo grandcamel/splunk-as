@@ -8,7 +8,6 @@ for Splunk REST API interactions.
 
 import functools
 import json
-import re
 import sys
 from typing import Any, Callable, Dict, Optional
 
