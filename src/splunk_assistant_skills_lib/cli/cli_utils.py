@@ -263,6 +263,36 @@ def get_time_bounds(earliest: str | None, latest: str | None) -> tuple[str, str]
     return validate_time_modifier(earliest_val), validate_time_modifier(latest_val)
 
 
+def with_time_bounds(func: F) -> F:
+    """Decorator to add standard time bound options to a Click command.
+
+    Adds --earliest/-e and --latest/-l options to the decorated command.
+    These options accept Splunk time modifiers like -1h, -24h@h, now, etc.
+
+    Example:
+        @search.command()
+        @click.argument("spl")
+        @with_time_bounds
+        @click.pass_context
+        def oneshot(ctx, spl, earliest, latest):
+            earliest, latest = get_time_bounds(earliest, latest)
+            ...
+    """
+    func = click.option(
+        "--latest",
+        "-l",
+        default=None,
+        help="Latest time (e.g., now, -1h). Default from config.",
+    )(func)
+    func = click.option(
+        "--earliest",
+        "-e",
+        default=None,
+        help="Earliest time (e.g., -1h, -24h@h). Default from config.",
+    )(func)
+    return func
+
+
 def build_endpoint(
     base_path: str,
     app: str | None = None,
