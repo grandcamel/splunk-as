@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import re
+
 import click
 
 from splunk_assistant_skills_lib import (
+    ValidationError,
     format_json,
     format_search_results,
     print_success,
+    quote_field_value,
+    validate_index_name,
 )
 
 from ..cli_utils import (
@@ -16,6 +21,79 @@ from ..cli_utils import (
     handle_cli_errors,
     output_results,
 )
+
+# Valid aggregation functions for mstats
+VALID_AGG_FUNCTIONS = frozenset({"avg", "sum", "min", "max", "count"})
+
+# Valid span format pattern (e.g., 1m, 5m, 1h, 30s)
+SPAN_PATTERN = re.compile(r"^\d+[smhd]$")
+
+
+def _validate_field_name(field: str, param_name: str = "field") -> str:
+    """Validate field name to prevent SPL injection.
+
+    Args:
+        field: Field name to validate
+        param_name: Parameter name for error messages
+
+    Returns:
+        Validated field name
+
+    Raises:
+        ValidationError: If field name is invalid
+    """
+    if not field or not re.match(r"^[a-zA-Z_][a-zA-Z0-9_.:]*$", field):
+        raise ValidationError(
+            f"Invalid field name: {field}",
+            operation="validation",
+            details={"field": param_name},
+        )
+    return field
+
+
+def _validate_metric_name(metric: str, param_name: str = "metric_name") -> str:
+    """Validate metric name to prevent SPL injection.
+
+    Metric names can contain alphanumeric, underscore, dot, and hyphen.
+
+    Args:
+        metric: Metric name to validate
+        param_name: Parameter name for error messages
+
+    Returns:
+        Validated metric name
+
+    Raises:
+        ValidationError: If metric name is invalid
+    """
+    if not metric or not re.match(r"^[a-zA-Z_][a-zA-Z0-9_.\-]*$", metric):
+        raise ValidationError(
+            f"Invalid metric name: {metric}",
+            operation="validation",
+            details={"field": param_name},
+        )
+    return metric
+
+
+def _validate_span(span: str) -> str:
+    """Validate span format.
+
+    Args:
+        span: Span value (e.g., 1m, 5m, 1h)
+
+    Returns:
+        Validated span
+
+    Raises:
+        ValidationError: If span format is invalid
+    """
+    if not SPAN_PATTERN.match(span):
+        raise ValidationError(
+            f"Invalid span format: {span}. Use format like 1m, 5m, 1h, 30s",
+            operation="validation",
+            details={"field": "span"},
+        )
+    return span
 
 
 @click.group()
@@ -47,7 +125,9 @@ def list_metrics(ctx: click.Context, index: str | None, output: str) -> None:
     client = get_client_from_context(ctx)
     spl = "| mcatalog values(metric_name) as metrics"
     if index:
-        spl += f" WHERE index={index}"
+        # Validate and quote index to prevent SPL injection
+        validate_index_name(index)
+        spl += f' WHERE index="{index}"'
     spl += " | mvexpand metrics | sort metrics"
 
     response = client.post(
@@ -142,13 +222,26 @@ def mstats(
     Example:
         splunk-as metrics mstats cpu.percent --index my_metrics --span 5m
     """
+    # Validate all user inputs to prevent SPL injection
+    if agg not in VALID_AGG_FUNCTIONS:
+        raise ValidationError(
+            f"Invalid aggregation function: {agg}",
+            operation="validation",
+            details={"field": "agg"},
+        )
+    _validate_metric_name(metric_name)
+    _validate_span(span)
+
     client = get_client_from_context(ctx)
     earliest, latest = get_time_bounds(earliest, latest)
 
-    spl = f"| mstats {agg}({metric_name}) as value"
+    # Quote metric_name for defense-in-depth
+    spl = f'| mstats {agg}("{metric_name}") as value'
     if index:
-        spl += f" WHERE index={index}"
+        validate_index_name(index)
+        spl += f' WHERE index="{index}"'
     if split_by:
+        _validate_field_name(split_by, "split_by")
         spl += f" BY {split_by}"
     spl += f" span={span}"
 
@@ -200,9 +293,20 @@ def mcatalog(
 
     where_clause = []
     if index:
-        where_clause.append(f"index={index}")
+        # Validate and quote index to prevent SPL injection
+        validate_index_name(index)
+        where_clause.append(f'index="{index}"')
     if metric:
-        where_clause.append(f'metric_name="{metric}"')
+        # Validate metric pattern (allow wildcards for catalog search)
+        # Escape any quotes and validate basic format
+        if not re.match(r"^[a-zA-Z_*][a-zA-Z0-9_.\-*]*$", metric):
+            raise ValidationError(
+                f"Invalid metric pattern: {metric}",
+                operation="validation",
+                details={"field": "metric"},
+            )
+        safe_metric = metric.replace('"', '\\"')
+        where_clause.append(f'metric_name="{safe_metric}"')
     if where_clause:
         spl += f" WHERE {' AND '.join(where_clause)}"
     spl += " | stats count by metric_name, dimensions"

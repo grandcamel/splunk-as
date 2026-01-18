@@ -5,11 +5,15 @@ from __future__ import annotations
 import click
 
 from splunk_assistant_skills_lib import (
+    ValidationError,
     validate_index_name,
     validate_path_component,
 )
 
 from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
+
+# Valid metadata types for defense-in-depth validation
+VALID_METADATA_TYPES = frozenset({"hosts", "sources", "sourcetypes"})
 
 
 @click.group()
@@ -127,6 +131,14 @@ def search(
         splunk-as metadata search hosts
         splunk-as metadata search sources --index main
     """
+    # Defense-in-depth validation (Click validates at CLI layer)
+    if metadata_type not in VALID_METADATA_TYPES:
+        raise ValidationError(
+            f"Invalid metadata_type: {metadata_type}",
+            operation="validation",
+            details={"field": "metadata_type"},
+        )
+
     client = get_client_from_context(ctx)
 
     search_spl = f"| metadata type={metadata_type}"
