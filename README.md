@@ -41,27 +41,55 @@ The library includes a full command-line interface (`splunk-as`) for interacting
 ```bash
 # Get help
 splunk-as --help
+splunk-as search --help
 
 # Search commands
 splunk-as search oneshot "index=main | head 10"
-splunk-as search normal "index=main | stats count" --wait
+splunk-as search oneshot "index=main | stats count by host" -o json
+splunk-as search oneshot "error" -e "-1h" -l "now" --fields host,message
+splunk-as search normal "index=main | stats count" --wait --timeout 120
+splunk-as search blocking "index=main | head 100"
+splunk-as search validate "index=main | stats count" --suggestions
 
 # Job management
 splunk-as job list
+splunk-as job list --state running
 splunk-as job status 1703779200.12345
 splunk-as job cancel 1703779200.12345
+splunk-as job results 1703779200.12345 --count 100 -o csv
 
 # Metadata discovery
 splunk-as metadata indexes
 splunk-as metadata sourcetypes --index main
+splunk-as metadata hosts --index main --earliest -24h
+splunk-as metadata sources --sourcetype syslog
 
 # Export data
-splunk-as export results "index=main | stats count" -o results.csv
+splunk-as export results "index=main | stats count by host" -o results.csv
+splunk-as export results "index=main" -o data.json --format json
+splunk-as export job 1703779200.12345 -o results.csv
+splunk-as export estimate "index=main | head 10000"
+
+# Lookups and KV Store
+splunk-as lookup list
+splunk-as lookup get my_lookup.csv
+splunk-as lookup upload data.csv --name my_lookup
+splunk-as kvstore list --app search
+splunk-as kvstore get mycollection --key record_id
+
+# Saved searches and alerts
+splunk-as savedsearch list --app search
+splunk-as savedsearch run "My Saved Search"
+splunk-as alert list
+splunk-as alert history "My Alert"
 
 # Administration
 splunk-as admin info
 splunk-as admin health
+splunk-as admin rest GET /server/settings
 splunk-as security whoami
+splunk-as security capabilities
+splunk-as app list
 ```
 
 ### Available Command Groups
@@ -284,6 +312,8 @@ from splunk_assistant_skills_lib import (
     format_table,
     format_json,
     format_search_results,
+    export_csv,
+    export_csv_string,
     print_success,
     print_warning,
 )
@@ -294,9 +324,48 @@ print(format_table(results, columns=["host", "count"]))
 # Format search results
 print(format_search_results(response, output_format="table"))
 
+# Export to CSV file
+export_csv(results, "output.csv", columns=["host", "count"])
+
+# Export to CSV string
+csv_data = export_csv_string(results, columns=["host", "count"])
+
 # Colored output
 print_success("Operation completed")
 print_warning("Check your configuration")
+```
+
+### Security Validators
+
+Prevent path traversal and injection attacks:
+
+```python
+from splunk_assistant_skills_lib import (
+    validate_file_path,
+    validate_path_component,
+    quote_field_value,
+    build_filter_clause,
+)
+
+# Validate file paths (prevents directory traversal)
+safe_path = validate_file_path("exports/data.csv", "output_file")
+# Raises ValidationError for "../etc/passwd" or absolute paths outside CWD
+
+# Validate URL path components (prevents URL injection)
+safe_name = validate_path_component("my-app", "app_name")
+# Raises ValidationError for "../admin" or paths with slashes
+
+# Quote values for safe SPL interpolation
+safe_value = quote_field_value("user input with spaces")
+# Returns: '"user input with spaces"'
+
+# Build filter clauses safely
+filters = build_filter_clause({
+    "host": "server1",
+    "status": ["200", "201"],  # OR clause
+    "user": None,  # NOT user=*
+})
+# Returns: 'host="server1" (status="200" OR status="201") NOT user=*'
 ```
 
 ## Configuration File Example
@@ -347,6 +416,53 @@ Or use Basic Auth:
 | `spl_helper` | SPL query building and parsing |
 | `job_poller` | Job state polling and management |
 | `time_utils` | Splunk time modifier handling |
+
+## Security
+
+This library implements defense-in-depth security practices to protect against common vulnerabilities.
+
+### SPL Injection Prevention
+
+All user input interpolated into SPL queries is properly escaped or validated:
+
+- **`quote_field_value()`** - Escapes special characters and quotes values
+- **`validate_spl()`** - Validates SPL syntax before execution
+- **`build_filter_clause()`** - Safely builds filter expressions from dictionaries
+
+### Path Traversal Prevention
+
+File and URL path operations are protected against traversal attacks:
+
+- **`validate_file_path()`** - Rejects `..` patterns, validates symlinks, ensures paths don't escape working directory
+- **`validate_path_component()`** - Prevents path separators and traversal patterns in URL segments
+
+### Input Validation
+
+All Splunk-specific formats are validated before use:
+
+- SIDs validated against expected format patterns
+- Time modifiers validated for correct Splunk syntax
+- Index and app names validated against allowed character sets
+- Port numbers and URLs validated for correctness
+
+### Sensitive Data Protection
+
+Output formatters automatically redact sensitive fields:
+
+- Passwords, tokens, API keys, secrets
+- Authentication and credential fields
+- Session keys and bearer tokens
+
+Fields containing these patterns are replaced with `[REDACTED]` in output.
+
+### Defense-in-Depth
+
+Multiple validation layers ensure security even if one layer is bypassed:
+
+- Input validated at CLI argument level
+- Re-validated in internal functions before use
+- URL path components are URL-encoded even after validation
+- JSON payloads have size limits to prevent DoS
 
 ## Development
 
