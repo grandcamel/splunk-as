@@ -374,6 +374,53 @@ class TestUploadLookup:
         with pytest.raises(ValueError, match="at least a header row and one data row"):
             client.upload_lookup("test", "header1,header2")
 
+    def test_upload_lookup_rejects_malicious_header_names(self):
+        """Test that upload_lookup rejects header names with SPL injection attempts."""
+        client = SplunkClient(
+            base_url="https://splunk.example.com",
+            token="test-token",
+        )
+
+        # Header with pipe character (SPL command injection)
+        with pytest.raises(ValueError, match="Invalid field name"):
+            client.upload_lookup(
+                "test", "user|rest /services/server/info,email\njohn,john@example.com"
+            )
+
+        # Header with space
+        with pytest.raises(ValueError, match="Invalid field name"):
+            client.upload_lookup("test", "user name,email\njohn,john@example.com")
+
+        # Header starting with number
+        with pytest.raises(ValueError, match="Invalid field name"):
+            client.upload_lookup("test", "1user,email\njohn,john@example.com")
+
+        # Header with special characters
+        with pytest.raises(ValueError, match="Invalid field name"):
+            client.upload_lookup("test", "user$name,email\njohn,john@example.com")
+
+    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    def test_upload_lookup_accepts_valid_header_names(self, mock_session_class):
+        """Test that upload_lookup accepts valid Splunk field names."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+
+        mock_session = MagicMock()
+        mock_session.request.return_value = mock_response
+        mock_session_class.return_value = mock_session
+
+        client = SplunkClient(
+            base_url="https://splunk.example.com",
+            token="test-token",
+        )
+
+        # Valid field names: underscore prefix, alphanumeric
+        result = client.upload_lookup(
+            "test", "_private,user_name,Email123\nval1,val2,val3"
+        )
+        assert result["status"] == "success"
+
 
 class TestStreamJsonLines:
     """Tests for stream_json_lines method."""

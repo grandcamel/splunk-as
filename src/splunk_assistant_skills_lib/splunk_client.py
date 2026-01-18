@@ -528,6 +528,32 @@ class SplunkClient:
             )
         return lookup_name
 
+    @staticmethod
+    def _validate_spl_field_name(field_name: str) -> str:
+        """Validate field name for safe use in SPL statements.
+
+        Prevents SPL injection via malicious CSV header names.
+        Splunk field names must start with a letter or underscore
+        and contain only alphanumeric characters and underscores.
+
+        Args:
+            field_name: CSV header or field name to validate
+
+        Returns:
+            Validated field name
+
+        Raises:
+            ValueError: If field name contains invalid characters
+        """
+        # Must start with letter or underscore, contain only alphanumeric and underscore
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", field_name):
+            raise ValueError(
+                f"Invalid field name '{field_name}': "
+                "must start with letter or underscore, "
+                "contain only alphanumeric and underscore"
+            )
+        return field_name
+
     def upload_lookup(
         self,
         lookup_name: str,
@@ -584,6 +610,10 @@ class SplunkClient:
 
         headers = rows[0]
         data_rows = rows[1:]
+
+        # Validate all header names to prevent SPL injection
+        for header in headers:
+            self._validate_spl_field_name(header)
 
         # Build SPL to create events from CSV rows and output to lookup
         # Use makeresults with append to build multiple rows
