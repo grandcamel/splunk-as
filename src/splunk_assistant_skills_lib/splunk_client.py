@@ -15,9 +15,12 @@ Features:
     - Streaming support for large result sets
 """
 
+import csv
+import io
 import json
+import re
 import time
-from typing import Any, Dict, Generator, Iterator, Optional, Union, cast
+from typing import Any, Dict, Generator, Iterator, List, Optional, Union, cast
 
 import requests
 
@@ -162,13 +165,15 @@ class SplunkClient:
 
                 # Check for errors
                 if response.status_code >= 400:
-                    # Retry on specific status codes
-                    if response.status_code in self.RETRY_STATUS_CODES:
-                        if attempt < self.max_retries:
-                            wait_time = self.retry_backoff**attempt
-                            time.sleep(wait_time)
-                            continue
-                    # Handle error
+                    # Retry on specific status codes if retries remain
+                    if (
+                        response.status_code in self.RETRY_STATUS_CODES
+                        and attempt < self.max_retries
+                    ):
+                        wait_time = self.retry_backoff**attempt
+                        time.sleep(wait_time)
+                        continue
+                    # Handle error (non-retryable or retries exhausted)
                     handle_splunk_error(response, operation)
 
                 return response
@@ -487,6 +492,42 @@ class SplunkClient:
 
         return cast(Dict[str, Any], response.json())
 
+    @staticmethod
+    def _escape_spl_value(value: str) -> str:
+        """Escape a value for safe use in SPL eval statements.
+
+        Prevents SPL injection by properly escaping special characters.
+
+        Args:
+            value: Raw string value
+
+        Returns:
+            Escaped string safe for use in SPL double-quoted strings
+        """
+        # Escape backslashes first, then double quotes
+        return value.replace("\\", "\\\\").replace('"', '\\"')
+
+    @staticmethod
+    def _validate_lookup_name(lookup_name: str) -> str:
+        """Validate and sanitize lookup name to prevent command injection.
+
+        Args:
+            lookup_name: Proposed lookup file name
+
+        Returns:
+            Sanitized lookup name
+
+        Raises:
+            ValueError: If lookup name contains invalid characters
+        """
+        # Only allow alphanumeric, underscore, hyphen, and dot
+        if not re.match(r"^[\w\-\.]+$", lookup_name):
+            raise ValueError(
+                f"Invalid lookup name '{lookup_name}': "
+                "only alphanumeric, underscore, hyphen, and dot allowed"
+            )
+        return lookup_name
+
     def upload_lookup(
         self,
         lookup_name: str,
@@ -511,44 +552,66 @@ class SplunkClient:
             operation: Description for error messages
 
         Returns:
-            Dict with status info
+            Dict with status info including:
+            - status: "success"
+            - lookup_name: final lookup filename
+            - rows_uploaded: number of rows successfully processed
+            - rows_total: total data rows in input (excluding header)
+            - warning: (optional) message if rows were skipped
+            - skipped_rows: (optional) list of skipped row numbers
 
         Example:
             >>> csv_content = "user,email\\njohn,john@example.com"
             >>> client.upload_lookup("users", csv_content)
         """
-        # Ensure lookup name has .csv extension
+        # Ensure lookup name has .csv extension and validate
         if not lookup_name.endswith(".csv"):
             lookup_name = f"{lookup_name}.csv"
+        lookup_name = self._validate_lookup_name(lookup_name)
 
         # Convert bytes to string if needed
         if isinstance(content, bytes):
             content = content.decode("utf-8")
 
-        # Parse CSV content
-        lines = content.strip().split("\n")
-        if len(lines) < 2:
+        # Parse CSV content using proper CSV parser
+        csv_reader = csv.reader(io.StringIO(content))
+        rows = list(csv_reader)
+
+        if len(rows) < 2:
             raise ValueError(
                 "CSV content must have at least a header row and one data row"
             )
 
-        # Get headers
-        headers = [h.strip() for h in lines[0].split(",")]
+        headers = rows[0]
+        data_rows = rows[1:]
 
         # Build SPL to create events from CSV rows and output to lookup
         # Use makeresults with append to build multiple rows
-        spl_parts = []
-        for i, line in enumerate(lines[1:]):  # Skip header
-            values = [v.strip().replace('"', '\\"') for v in line.split(",")]
-            if len(values) != len(headers):
-                continue  # Skip malformed rows
+        spl_parts: List[str] = []
+        successful_rows = 0
+        skipped_rows: List[int] = []
 
-            # Build eval statements for each field
-            evals = ", ".join(f'{h}="{v}"' for h, v in zip(headers, values))
-            if i == 0:
+        for i, values in enumerate(data_rows):
+            row_num = i + 2  # 1-indexed, accounting for header
+
+            if len(values) != len(headers):
+                skipped_rows.append(row_num)
+                continue
+
+            # Build eval statements with proper escaping
+            evals = ", ".join(
+                f'{h}="{self._escape_spl_value(v)}"' for h, v in zip(headers, values)
+            )
+
+            if successful_rows == 0:
                 spl_parts.append(f"| makeresults | eval {evals}")
             else:
                 spl_parts.append(f"| append [| makeresults | eval {evals}]")
+
+            successful_rows += 1
+
+        if successful_rows == 0:
+            raise ValueError("No valid rows to upload after parsing CSV")
 
         # Add outputlookup
         spl = " ".join(spl_parts) + f" | outputlookup {lookup_name}"
@@ -556,7 +619,7 @@ class SplunkClient:
         request_timeout = timeout or self.DEFAULT_SEARCH_TIMEOUT
 
         # Run as oneshot search
-        response = self.post(
+        self.post(
             f"/servicesNS/{namespace}/{app}/search/jobs/oneshot",
             data={
                 "search": spl,
@@ -566,7 +629,18 @@ class SplunkClient:
             operation=operation,
         )
 
-        return {"status": "success", "lookup_name": lookup_name, "rows": len(lines) - 1}
+        result: Dict[str, Any] = {
+            "status": "success",
+            "lookup_name": lookup_name,
+            "rows_uploaded": successful_rows,
+            "rows_total": len(data_rows),
+        }
+
+        if skipped_rows:
+            result["warning"] = f"Skipped {len(skipped_rows)} malformed rows"
+            result["skipped_rows"] = skipped_rows
+
+        return result
 
     def stream_results(
         self,

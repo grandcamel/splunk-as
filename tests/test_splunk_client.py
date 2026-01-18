@@ -360,7 +360,8 @@ class TestUploadLookup:
 
         # Should successfully decode bytes and process
         assert result["status"] == "success"
-        assert result["rows"] == 1
+        assert result["rows_uploaded"] == 1
+        assert result["rows_total"] == 1
 
     def test_upload_lookup_requires_header_and_data(self):
         """Test that upload_lookup requires at least header and one data row."""
