@@ -56,7 +56,7 @@ This is a Python library for interacting with the Splunk REST API. The package i
 
 ### Utility Modules
 
-- **validators.py**: Input validation for Splunk formats (SID, SPL, time modifiers, index names)
+- **validators.py**: Input validation for Splunk formats (SID, SPL, time modifiers, index names) and security validators (`validate_file_path`, `validate_path_component`)
 - **spl_helper.py**: SPL query building, parsing, and complexity estimation
 - **job_poller.py**: Search job state polling with `JobState` enum and `JobProgress` dataclass
 - **time_utils.py**: Splunk time modifier parsing and formatting
@@ -93,9 +93,26 @@ When adding new CLI commands:
 
 ### Security Considerations
 
+#### Input Validation (validators.py)
+
+- **Path Traversal Prevention**: Use `validate_file_path(path, "param_name")` for any user-provided file paths. Rejects `..` sequences and paths escaping current directory.
+- **URL Path Injection Prevention**: Use `validate_path_component(name, "param_name")` for values interpolated into REST API URLs. Rejects `..`, `/`, `\` and URL-encodes the result.
+
+#### SPL Injection Prevention (splunk_client.py)
+
+- **Escape Values**: Use `SplunkClient._escape_spl_value(value)` when interpolating values into SPL queries (escapes `\` and `"`)
+- **Validate Field Names**: Use `SplunkClient._validate_spl_field_name(field)` for CSV headers - enforces `[A-Za-z_][A-Za-z0-9_]*` pattern
+- **Validate Lookup Names**: Use `SplunkClient._validate_lookup_name(name)` - allows only `[\w\-\.]+`
+
+#### CLI Security Patterns
+
+- **File Operations**: Always call `validate_file_path()` before `open()` in CLI commands
+- **Endpoint Construction**: Always call `validate_path_component()` on user-provided path segments (app, name, collection, key) before interpolating into f-string endpoints
+- **Admin REST Commands**: Use `_validate_rest_endpoint()` to reject `..` and require leading `/`
+
+#### Data Handling
+
 - **CSV Parsing**: Always use Python's `csv` module, never `split(",")` which breaks on quoted fields
-- **SPL Injection**: Use `SplunkClient._escape_spl_value()` when interpolating values into SPL queries
-- **Lookup Names**: Use `SplunkClient._validate_lookup_name()` to prevent command injection
 - **Credentials**: Never log or expose tokens/passwords; store in `.claude/settings.local.json` (gitignored)
 
 ### Error Handling
