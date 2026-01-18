@@ -13,18 +13,23 @@ from splunk_assistant_skills_lib import (
     format_json,
     format_search_results,
     get_api_settings,
-    get_splunk_client,
     optimize_spl,
     parse_spl_commands,
     print_success,
     print_warning,
-    validate_sid,
     validate_spl,
     validate_spl_syntax,
     wait_for_job,
 )
 
-from ..cli_utils import get_time_bounds, handle_cli_errors, parse_comma_list
+from ..cli_utils import (
+    extract_sid_from_response,
+    get_client_from_context,
+    get_time_bounds,
+    handle_cli_errors,
+    parse_comma_list,
+    validate_sid_callback,
+)
 
 
 @click.group()
@@ -77,7 +82,7 @@ def oneshot(
     search_spl = build_search(
         spl, earliest_time=earliest, latest_time=latest, fields=fields_list
     )
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     response = client.post(
         "/search/jobs/oneshot",
@@ -130,7 +135,7 @@ def normal(
     earliest, latest = get_time_bounds(earliest, latest)
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     response = client.post(
         "/search/v2/jobs",
@@ -143,7 +148,7 @@ def normal(
         operation="create search job",
     )
 
-    sid = response.get("sid") or (response.get("entry", [{}])[0].get("name"))
+    sid = extract_sid_from_response(response)
 
     if wait:
         wait_for_job(client, sid, timeout=timeout, show_progress=True)
@@ -196,7 +201,7 @@ def blocking(
     earliest, latest = get_time_bounds(earliest, latest)
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     response = client.post(
         "/search/v2/jobs",
@@ -210,7 +215,7 @@ def blocking(
         operation="blocking search",
     )
 
-    sid = response.get("entry", [{}])[0].get("name")
+    sid = extract_sid_from_response(response)
     results = client.get(
         f"/search/v2/jobs/{sid}/results",
         params={"output_mode": "json", "count": 0},
@@ -277,7 +282,7 @@ def validate(ctx: click.Context, spl: str, suggestions: bool, output: str) -> No
 
 
 @search.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.option(
     "--count", "-c", type=int, default=0, help="Maximum results to return (0=all)."
 )
@@ -307,9 +312,8 @@ def results(
     Example:
         splunk-as search results 1703779200.12345 --count 100
     """
-    sid = validate_sid(sid)
     fields_list = parse_comma_list(fields)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     params = {"output_mode": "json", "count": count, "offset": offset}
     if fields_list:
@@ -323,7 +327,7 @@ def results(
 
 
 @search.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.option("--count", "-c", type=int, default=100, help="Maximum results to return.")
 @click.option(
     "--output",
@@ -340,8 +344,7 @@ def preview(ctx: click.Context, sid: str, count: int, output: str) -> None:
     Example:
         splunk-as search preview 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     results = client.get(
         f"/search/v2/jobs/{sid}/results_preview",

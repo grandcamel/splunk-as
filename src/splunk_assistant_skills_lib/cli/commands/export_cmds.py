@@ -8,15 +8,19 @@ from splunk_assistant_skills_lib import (
     ValidationError,
     build_search,
     get_api_settings,
-    get_splunk_client,
     print_info,
     print_success,
-    validate_sid,
     validate_spl,
     wait_for_job,
 )
 
-from ..cli_utils import get_time_bounds, handle_cli_errors
+from ..cli_utils import (
+    extract_sid_from_response,
+    get_client_from_context,
+    get_time_bounds,
+    handle_cli_errors,
+    validate_sid_callback,
+)
 
 
 @click.group()
@@ -66,7 +70,7 @@ def results(
 
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
 
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     # Create job
     print_info("Creating search job...")
@@ -81,11 +85,9 @@ def results(
         operation="create export job",
     )
 
-    sid = response.get("sid")
-    if not sid and "entry" in response:
-        sid = response["entry"][0].get("name")
-
-    if not sid:
+    try:
+        sid = extract_sid_from_response(response)
+    except ValueError:
         raise ValidationError("No SID returned from search job creation")
 
     # Wait for completion
@@ -124,7 +126,7 @@ def results(
 
 
 @export.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.option("--output-file", "-o", required=True, help="Output file path.")
 @click.option(
     "--format",
@@ -149,8 +151,7 @@ def job(
     Example:
         splunk-as export job 1703779200.12345 -o results.csv
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     api_settings = get_api_settings()
 
     params = {
@@ -196,7 +197,7 @@ def estimate(
     estimate_spl = f"{spl} | stats count"
     search_spl = build_search(estimate_spl, earliest_time=earliest, latest_time=latest)
 
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     response = client.post(
         "/search/jobs/oneshot",

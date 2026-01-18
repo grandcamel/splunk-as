@@ -7,11 +7,15 @@ import click
 from splunk_assistant_skills_lib import (
     format_json,
     format_search_results,
-    get_splunk_client,
     print_success,
 )
 
-from ..cli_utils import get_time_bounds, handle_cli_errors, output_results
+from ..cli_utils import (
+    get_client_from_context,
+    get_time_bounds,
+    handle_cli_errors,
+    output_results,
+)
 
 
 @click.group()
@@ -40,7 +44,7 @@ def list_metrics(ctx: click.Context, index: str | None, output: str) -> None:
     Example:
         splunk-as metrics list --index my_metrics
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     spl = "| mcatalog values(metric_name) as metrics"
     if index:
         spl += f" WHERE index={index}"
@@ -81,7 +85,7 @@ def indexes(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as metrics indexes
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         "/data/indexes", params={"datatype": "metric"}, operation="list metrics indexes"
     )
@@ -138,7 +142,7 @@ def mstats(
     Example:
         splunk-as metrics mstats cpu.percent --index my_metrics --span 5m
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     earliest, latest = get_time_bounds(earliest, latest)
 
     spl = f"| mstats {agg}({metric_name}) as value"
@@ -191,7 +195,7 @@ def mcatalog(
     Example:
         splunk-as metrics mcatalog --index my_metrics --metric "cpu.*"
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     spl = "| mcatalog values(metric_name) as metric_name, values(_dims) as dimensions"
 
     where_clause = []

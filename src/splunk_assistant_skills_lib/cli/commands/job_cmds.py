@@ -13,18 +13,22 @@ from splunk_assistant_skills_lib import (
     format_json,
     format_table,
     get_dispatch_state,
-    get_splunk_client,
     list_jobs,
     pause_job,
     print_success,
     set_job_ttl,
     unpause_job,
-    validate_sid,
     validate_spl,
     wait_for_job,
 )
 
-from ..cli_utils import get_time_bounds, handle_cli_errors
+from ..cli_utils import (
+    extract_sid_from_response,
+    get_client_from_context,
+    get_time_bounds,
+    handle_cli_errors,
+    validate_sid_callback,
+)
 
 
 @click.group()
@@ -73,7 +77,7 @@ def create(
     earliest, latest = get_time_bounds(earliest, latest)
     spl = validate_spl(spl)
     search_spl = build_search(spl, earliest_time=earliest, latest_time=latest)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     data = {
         "search": search_spl,
@@ -93,11 +97,7 @@ def create(
         operation="create search job",
     )
 
-    sid = response.get("sid")
-    if not sid and "entry" in response:
-        sid = response["entry"][0].get(
-            "name", response["entry"][0].get("content", {}).get("sid")
-        )
+    sid = extract_sid_from_response(response)
 
     if output == "json":
         click.echo(
@@ -120,7 +120,7 @@ def create(
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.option(
     "--output",
     "-o",
@@ -136,8 +136,7 @@ def status(ctx: click.Context, sid: str, output: str) -> None:
     Example:
         splunk-as job status 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     progress = get_dispatch_state(client, sid)
 
     if output == "json":
@@ -178,7 +177,7 @@ def list_jobs_cmd(ctx: click.Context, count: int, output: str) -> None:
     Example:
         splunk-as job list --count 10
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     jobs = list_jobs(client, count=count)
 
     if output == "json":
@@ -211,7 +210,7 @@ def list_jobs_cmd(ctx: click.Context, count: int, output: str) -> None:
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.option("--timeout", type=int, default=300, help="Timeout in seconds.")
 @click.option("--quiet", "-q", is_flag=True, help="Suppress progress updates.")
 @click.option(
@@ -229,8 +228,7 @@ def poll(ctx: click.Context, sid: str, timeout: int, quiet: bool, output: str) -
     Example:
         splunk-as job poll 1703779200.12345 --timeout 60
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     progress = wait_for_job(
         client,
@@ -259,7 +257,7 @@ def poll(ctx: click.Context, sid: str, timeout: int, quiet: bool, output: str) -
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.pass_context
 @handle_cli_errors
 def cancel(ctx: click.Context, sid: str) -> None:
@@ -268,14 +266,13 @@ def cancel(ctx: click.Context, sid: str) -> None:
     Example:
         splunk-as job cancel 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     cancel_job(client, sid)
     print_success(f"Job cancelled: {sid}")
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.pass_context
 @handle_cli_errors
 def pause(ctx: click.Context, sid: str) -> None:
@@ -284,14 +281,13 @@ def pause(ctx: click.Context, sid: str) -> None:
     Example:
         splunk-as job pause 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     pause_job(client, sid)
     print_success(f"Job paused: {sid}")
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.pass_context
 @handle_cli_errors
 def unpause(ctx: click.Context, sid: str) -> None:
@@ -300,14 +296,13 @@ def unpause(ctx: click.Context, sid: str) -> None:
     Example:
         splunk-as job unpause 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     unpause_job(client, sid)
     print_success(f"Job resumed: {sid}")
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.pass_context
 @handle_cli_errors
 def finalize(ctx: click.Context, sid: str) -> None:
@@ -316,14 +311,13 @@ def finalize(ctx: click.Context, sid: str) -> None:
     Example:
         splunk-as job finalize 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     finalize_job(client, sid)
     print_success(f"Job finalized: {sid}")
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.pass_context
 @handle_cli_errors
 def delete(ctx: click.Context, sid: str) -> None:
@@ -332,14 +326,13 @@ def delete(ctx: click.Context, sid: str) -> None:
     Example:
         splunk-as job delete 1703779200.12345
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     delete_job(client, sid)
     print_success(f"Job deleted: {sid}")
 
 
 @job.command()
-@click.argument("sid")
+@click.argument("sid", callback=validate_sid_callback)
 @click.argument("ttl_value", type=int)
 @click.pass_context
 @handle_cli_errors
@@ -349,7 +342,6 @@ def ttl(ctx: click.Context, sid: str, ttl_value: int) -> None:
     Example:
         splunk-as job ttl 1703779200.12345 3600
     """
-    sid = validate_sid(sid)
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     set_job_ttl(client, sid, ttl=ttl_value)
     print_success(f"Job TTL set to {ttl_value}s: {sid}")

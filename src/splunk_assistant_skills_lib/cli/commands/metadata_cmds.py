@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import click
 
-from splunk_assistant_skills_lib import get_splunk_client
-
-from ..cli_utils import handle_cli_errors, output_results
+from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
 
 
 @click.group()
@@ -37,7 +35,7 @@ def indexes(ctx: click.Context, filter_pattern: str | None, output: str) -> None
     Example:
         splunk-as metadata indexes
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/data/indexes", operation="list indexes")
 
     indexes_list = []
@@ -77,7 +75,7 @@ def index_info(ctx: click.Context, index_name: str, output: str) -> None:
     Example:
         splunk-as metadata index-info main
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(f"/data/indexes/{index_name}", operation="get index info")
 
     if "entry" in response and response["entry"]:
@@ -120,7 +118,7 @@ def search(
         splunk-as metadata search hosts
         splunk-as metadata search sources --index main
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     search_spl = f"| metadata type={metadata_type}"
     if index:
@@ -173,7 +171,7 @@ def fields(
     Example:
         splunk-as metadata fields main --sourcetype access_combined
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     search = f"index={index_name}"
     if sourcetype:

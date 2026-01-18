@@ -7,12 +7,16 @@ import click
 from splunk_assistant_skills_lib import (
     format_json,
     format_saved_search,
-    get_splunk_client,
     print_success,
     print_warning,
 )
 
-from ..cli_utils import build_endpoint, handle_cli_errors, output_results
+from ..cli_utils import (
+    build_endpoint,
+    get_client_from_context,
+    handle_cli_errors,
+    output_results,
+)
 
 
 @click.group()
@@ -44,7 +48,7 @@ def list_searches(
     Example:
         splunk-as savedsearch list --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     endpoint = build_endpoint("/saved/searches", app=app, owner=owner)
     response = client.get(endpoint, operation="list saved searches")
 
@@ -80,7 +84,7 @@ def get(ctx: click.Context, name: str, app: str, output: str) -> None:
     Example:
         splunk-as savedsearch get "My Report" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         f"/servicesNS/-/{app}/saved/searches/{name}", operation="get saved search"
     )
@@ -114,7 +118,7 @@ def create(
     Example:
         splunk-as savedsearch create --name "Daily Report" --search "index=main | stats count"
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     data: dict[str, str | bool] = {
         "name": name,
@@ -157,7 +161,7 @@ def update(
     Example:
         splunk-as savedsearch update "My Report" --search "index=main | stats count by host"
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     data = {}
     if search:
@@ -198,7 +202,7 @@ def run(ctx: click.Context, name: str, app: str, wait: bool, output: str) -> Non
     Example:
         splunk-as savedsearch run "My Report" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.post(
         f"/servicesNS/-/{app}/saved/searches/{name}/dispatch",
         operation="dispatch saved search",
@@ -223,7 +227,7 @@ def enable(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as savedsearch enable "My Report" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     client.post(
         f"/servicesNS/-/{app}/saved/searches/{name}/enable",
@@ -243,7 +247,7 @@ def disable(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as savedsearch disable "My Report" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     client.post(
         f"/servicesNS/-/{app}/saved/searches/{name}/disable",
@@ -270,7 +274,7 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     client.delete(
         f"/servicesNS/-/{app}/saved/searches/{name}",

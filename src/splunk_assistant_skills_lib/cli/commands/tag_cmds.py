@@ -7,11 +7,10 @@ import click
 from splunk_assistant_skills_lib import (
     format_json,
     format_table,
-    get_splunk_client,
     print_success,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import get_client_from_context, handle_cli_errors
 
 
 @click.group()
@@ -40,7 +39,7 @@ def list_tags(ctx: click.Context, app: str | None, output: str) -> None:
     Example:
         splunk-as tag list --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     # Use a search to find tags
     search = "| rest /services/configs/conf-tags | table title, eai:acl.app"
@@ -86,7 +85,7 @@ def add(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -> N
     Example:
         splunk-as tag add "host::webserver01" "production" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     # Parse field::value
     if "::" not in field_value_pair:
@@ -121,7 +120,7 @@ def remove(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -
     Example:
         splunk-as tag remove "host::webserver01" "production" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     # Parse field::value
     if "::" not in field_value_pair:
@@ -162,7 +161,7 @@ def search(
     Example:
         splunk-as tag search "production" --index main
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     spl = f"tag={tag_name}"
     if index:

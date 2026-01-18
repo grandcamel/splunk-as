@@ -6,9 +6,14 @@ import json
 
 import click
 
-from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success
+from splunk_assistant_skills_lib import format_json, print_success
 
-from ..cli_utils import build_endpoint, handle_cli_errors, output_results
+from ..cli_utils import (
+    build_endpoint,
+    get_client_from_context,
+    handle_cli_errors,
+    output_results,
+)
 
 
 @click.group()
@@ -36,7 +41,7 @@ def info(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as admin info
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/server/info", operation="get server info")
 
     if "entry" in response and response["entry"]:
@@ -69,7 +74,7 @@ def status(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as admin status
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/server/status", operation="get server status")
 
     if "entry" in response and response["entry"]:
@@ -96,7 +101,7 @@ def health(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as admin health
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/server/health/splunkd", operation="get health")
 
     if "entry" in response and response["entry"]:
@@ -125,7 +130,7 @@ def list_users(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as admin list-users
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/authentication/users", operation="list users")
 
     users = [
@@ -156,7 +161,7 @@ def list_roles(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as admin list-roles
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/authorization/roles", operation="list roles")
 
     roles = [
@@ -186,7 +191,7 @@ def rest_get(
     Example:
         splunk-as admin rest-get /services/server/info
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     endpoint = build_endpoint(endpoint, app=app, owner=owner)
     response = client.get(endpoint, operation=f"GET {endpoint}")
     click.echo(format_json(response))
@@ -211,7 +216,7 @@ def rest_post(
     Example:
         splunk-as admin rest-post /services/saved/searches -d '{"name": "test"}'
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     endpoint = build_endpoint(endpoint, app=app, owner=owner)
 
     post_data = None

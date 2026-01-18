@@ -6,12 +6,11 @@ import click
 
 from splunk_assistant_skills_lib import (
     format_json,
-    get_splunk_client,
     print_error,
     print_success,
 )
 
-from ..cli_utils import handle_cli_errors, output_results
+from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
 
 
 @click.group()
@@ -39,7 +38,7 @@ def whoami(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as security whoami
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/authentication/current-context", operation="whoami")
 
     if "entry" in response and response["entry"]:
@@ -70,7 +69,7 @@ def list_tokens(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as security list-tokens
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/authorization/tokens", operation="list tokens")
 
     tokens = [
@@ -99,7 +98,7 @@ def create_token(
     Example:
         splunk-as security create-token --name "API Token" --expires 86400
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     data = {"name": name}
     if audience:
@@ -128,7 +127,7 @@ def delete_token(ctx: click.Context, token_id: str) -> None:
     Example:
         splunk-as security delete-token token_12345
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     client.delete(f"/authorization/tokens/{token_id}", operation="delete token")
     print_success(f"Deleted token: {token_id}")
 
@@ -149,7 +148,7 @@ def list_users(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as security list-users
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/authentication/users", operation="list users")
 
     users = [
@@ -179,7 +178,7 @@ def list_roles(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as security list-roles
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/authorization/roles", operation="list roles")
 
     roles = [
@@ -210,7 +209,7 @@ def capabilities(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as security capabilities
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         "/authentication/current-context", operation="get capabilities"
     )
@@ -244,7 +243,7 @@ def acl(ctx: click.Context, path: str, output: str) -> None:
     Example:
         splunk-as security acl /servicesNS/admin/search/saved/searches/MySavedSearch
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(f"{path}/acl", operation="get ACL")
 
     if "entry" in response and response["entry"]:
@@ -273,7 +272,7 @@ def check(ctx: click.Context, capability: str) -> None:
     Example:
         splunk-as security check admin_all_objects
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         "/authentication/current-context", operation="check capability"
     )

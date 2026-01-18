@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import click
 
-from splunk_assistant_skills_lib import format_json, get_splunk_client, print_success
+from splunk_assistant_skills_lib import format_json, print_success
 
-from ..cli_utils import build_endpoint, handle_cli_errors, output_results
+from ..cli_utils import (
+    build_endpoint,
+    get_client_from_context,
+    handle_cli_errors,
+    output_results,
+)
 
 
 @click.group()
@@ -35,7 +40,7 @@ def list_alerts(ctx: click.Context, app: str | None, output: str) -> None:
     Example:
         splunk-as alert list --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     endpoint = build_endpoint("/saved/searches", app=app)
     response = client.get(
         endpoint,
@@ -73,7 +78,7 @@ def get(ctx: click.Context, name: str, app: str, output: str) -> None:
     Example:
         splunk-as alert get "My Alert" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         f"/servicesNS/-/{app}/saved/searches/{name}", operation="get alert"
     )
@@ -110,7 +115,7 @@ def triggered(ctx: click.Context, app: str | None, count: int, output: str) -> N
     Example:
         splunk-as alert triggered --app search --count 20
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     endpoint = build_endpoint("/alerts/fired_alerts", app=app)
     response = client.get(
         endpoint, params={"count": count}, operation="list triggered alerts"
@@ -139,7 +144,7 @@ def acknowledge(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as alert acknowledge "My Alert" --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     # Get alert group and acknowledge
     response = client.get(
@@ -186,7 +191,7 @@ def create(
     Example:
         splunk-as alert create --name "Error Alert" --search "index=main error" --cron "*/5 * * * *"
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     data = {
         "name": name,

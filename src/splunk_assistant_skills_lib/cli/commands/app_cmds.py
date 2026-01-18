@@ -9,12 +9,11 @@ import click
 from splunk_assistant_skills_lib import (
     format_json,
     format_table,
-    get_splunk_client,
     print_success,
     print_warning,
 )
 
-from ..cli_utils import handle_cli_errors
+from ..cli_utils import get_client_from_context, handle_cli_errors
 
 
 @click.group()
@@ -42,7 +41,7 @@ def list_apps(ctx: click.Context, output: str) -> None:
     Example:
         splunk-as app list
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get("/apps/local", operation="list apps")
 
     apps = []
@@ -82,7 +81,7 @@ def get(ctx: click.Context, name: str, output: str) -> None:
     Example:
         splunk-as app get search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(f"/apps/local/{name}", operation="get app")
 
     if "entry" in response and response["entry"]:
@@ -111,7 +110,7 @@ def enable(ctx: click.Context, name: str) -> None:
     Example:
         splunk-as app enable my_app
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     client.post(
         f"/apps/local/{name}/enable",
         operation="enable app",
@@ -129,7 +128,7 @@ def disable(ctx: click.Context, name: str) -> None:
     Example:
         splunk-as app disable my_app
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     client.post(
         f"/apps/local/{name}/disable",
         operation="disable app",
@@ -154,7 +153,7 @@ def uninstall(ctx: click.Context, name: str, force: bool) -> None:
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     client.delete(f"/apps/local/{name}", operation="uninstall app")
     print_success(f"Uninstalled app: {name}")
 
@@ -173,7 +172,7 @@ def install(
     Example:
         splunk-as app install /path/to/app.tar.gz
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     data: dict[str, Any] = {"name": package_path}
     if name:

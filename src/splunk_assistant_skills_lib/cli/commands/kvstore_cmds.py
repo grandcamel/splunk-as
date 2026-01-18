@@ -9,12 +9,11 @@ import click
 
 from splunk_assistant_skills_lib import (
     format_json,
-    get_splunk_client,
     print_success,
     print_warning,
 )
 
-from ..cli_utils import handle_cli_errors, output_results
+from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
 
 
 @click.group()
@@ -43,7 +42,7 @@ def list_collections(ctx: click.Context, app: str, output: str) -> None:
     Example:
         splunk-as kvstore list --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         f"/servicesNS/-/{app}/storage/collections/config", operation="list collections"
     )
@@ -68,7 +67,7 @@ def create(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as kvstore create my_collection --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     client.post(
         f"/servicesNS/nobody/{app}/storage/collections/config",
         data={"name": name},
@@ -95,7 +94,7 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     client.delete(
         f"/servicesNS/nobody/{app}/storage/collections/config/{name}",
         operation="delete collection",
@@ -115,7 +114,7 @@ def insert(ctx: click.Context, collection: str, data: str, app: str) -> None:
     Example:
         splunk-as kvstore insert my_collection '{"name": "test", "value": 123}'
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     record = json.loads(data)
     response = client.post(
@@ -155,7 +154,7 @@ def query(
     Example:
         splunk-as kvstore query my_collection --query '{"status": "active"}'
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     params: dict[str, Any] = {"limit": limit}
     if query:
         params["query"] = query
@@ -181,7 +180,7 @@ def get(ctx: click.Context, collection: str, key: str, app: str) -> None:
     Example:
         splunk-as kvstore get my_collection record_key_123
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     response = client.get(
         f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
         operation="get record",
@@ -202,7 +201,7 @@ def update(ctx: click.Context, collection: str, key: str, data: str, app: str) -
     Example:
         splunk-as kvstore update my_collection key123 '{"status": "updated"}'
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     record = json.loads(data)
     client.post(
@@ -225,7 +224,7 @@ def delete_record(ctx: click.Context, collection: str, key: str, app: str) -> No
     Example:
         splunk-as kvstore delete-record my_collection key123
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     client.delete(
         f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",

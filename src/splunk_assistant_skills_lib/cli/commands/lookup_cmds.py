@@ -10,12 +10,11 @@ from splunk_assistant_skills_lib import (
     format_json,
     format_search_results,
     format_table,
-    get_splunk_client,
     print_success,
     print_warning,
 )
 
-from ..cli_utils import build_endpoint, handle_cli_errors
+from ..cli_utils import build_endpoint, get_client_from_context, handle_cli_errors
 
 
 @click.group()
@@ -44,7 +43,7 @@ def list_lookups(ctx: click.Context, app: str | None, output: str) -> None:
     Example:
         splunk-as lookup list --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
     endpoint = build_endpoint("/data/lookup-table-files", app=app)
     response = client.get(endpoint, operation="list lookups")
 
@@ -89,7 +88,7 @@ def get(
     Example:
         splunk-as lookup get users.csv --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     # Use inputlookup to get contents
     search = f"| inputlookup {lookup_name} | head {count}"
@@ -129,7 +128,7 @@ def download(
     Example:
         splunk-as lookup download users.csv -o users_backup.csv
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     output_file = output_file or lookup_name
 
@@ -165,7 +164,7 @@ def upload(ctx: click.Context, file_path: str, app: str, name: str | None) -> No
     Example:
         splunk-as lookup upload /path/to/users.csv --app search
     """
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     lookup_name = name or os.path.basename(file_path)
 
@@ -193,7 +192,7 @@ def delete(ctx: click.Context, lookup_name: str, app: str, force: bool) -> None:
             click.echo("Cancelled.")
             return
 
-    client = get_splunk_client()
+    client = get_client_from_context(ctx)
 
     endpoint = f"/servicesNS/-/{app}/data/lookup-table-files/{lookup_name}"
     client.delete(endpoint, operation="delete lookup")
