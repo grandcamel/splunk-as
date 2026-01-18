@@ -493,6 +493,31 @@ def get_search_command_info(command: str) -> Dict[str, Any]:
     return info
 
 
+def _parse_field_list(field_str: str) -> List[str]:
+    """Parse and validate a comma-separated field list.
+
+    This function safely parses field lists without using regex patterns
+    that could cause exponential backtracking (ReDoS).
+
+    Args:
+        field_str: String containing comma-separated field names
+
+    Returns:
+        List of valid field names
+    """
+    fields = []
+    # Simple pattern to validate individual field names (no nested quantifiers)
+    valid_field_pattern = re.compile(r"^[a-zA-Z_][\w.]*$")
+
+    for part in field_str.split(","):
+        field = part.strip()
+        # Validate field name format
+        if field and valid_field_pattern.match(field):
+            fields.append(field)
+
+    return fields
+
+
 def extract_fields_from_spl(spl: str) -> List[str]:
     """
     Extract field names referenced in SPL query.
@@ -505,25 +530,36 @@ def extract_fields_from_spl(spl: str) -> List[str]:
     """
     fields: Set[str] = set()
 
-    # Common patterns for field references
-    patterns = [
-        r"\bby\s+([a-zA-Z_][\w.]*(?:\s*,\s*[a-zA-Z_][\w.]*)*)",  # by clause
-        r"\bfields?\s+[+-]?\s*([a-zA-Z_][\w.]*(?:\s*,\s*[a-zA-Z_][\w.]*)*)",  # fields command
-        r"\btable\s+([a-zA-Z_][\w.]*(?:\s*,\s*[a-zA-Z_][\w.]*)*)",  # table command
+    # Patterns that match field lists by capturing until pipe or end
+    # These avoid nested quantifiers that can cause ReDoS
+    # We capture broadly and filter invalid fields in _parse_field_list
+    field_list_patterns = [
+        r"\bby\s+([^|]+)",  # by clause - match until pipe
+        r"\bfields?\s+[+-]?\s*([^|]+)",  # fields command
+        r"\btable\s+([^|]+)",  # table command
+    ]
+
+    # Patterns for single field extraction (no nested quantifiers)
+    single_field_patterns = [
         r"([a-zA-Z_][\w.]*)\s*=",  # field=value
         r"\beval\s+([a-zA-Z_][\w.]*)\s*=",  # eval field=
         r"\brename\s+[^\s]+\s+(?:as|AS)\s+([a-zA-Z_][\w.]*)",  # rename as
     ]
 
-    for pattern in patterns:
+    # Extract field lists and parse them safely
+    for pattern in field_list_patterns:
         matches = re.findall(pattern, spl, re.IGNORECASE)
         for match in matches:
-            # Handle comma-separated fields
-            if "," in match:
-                for field in match.split(","):
-                    fields.add(field.strip())
-            else:
-                fields.add(match.strip())
+            for field in _parse_field_list(match):
+                fields.add(field)
+
+    # Extract single fields
+    for pattern in single_field_patterns:
+        matches = re.findall(pattern, spl, re.IGNORECASE)
+        for match in matches:
+            field = match.strip()
+            if field and re.match(r"^[a-zA-Z_][\w.]*$", field):
+                fields.add(field)
 
     # Remove Splunk internal fields if present
     fields = {

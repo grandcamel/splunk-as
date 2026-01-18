@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Unit tests for spl_helper module."""
 
+import time
+
 import pytest
 
 from splunk_assistant_skills_lib.spl_helper import (
+    _parse_field_list,
     add_field_extraction,
     add_head_limit,
     add_time_bounds,
@@ -177,3 +180,106 @@ class TestBuildFilterClause:
     def test_null_filter(self):
         result = build_filter_clause({"host": None})
         assert result == "NOT host=*"
+
+
+class TestParseFieldList:
+    """Tests for _parse_field_list helper function."""
+
+    def test_single_field(self):
+        result = _parse_field_list("host")
+        assert result == ["host"]
+
+    def test_multiple_fields(self):
+        result = _parse_field_list("host, status, user")
+        assert result == ["host", "status", "user"]
+
+    def test_fields_with_dots(self):
+        result = _parse_field_list("host.name, status.code")
+        assert result == ["host.name", "status.code"]
+
+    def test_fields_with_underscores(self):
+        result = _parse_field_list("_time, host_name, user_id")
+        assert result == ["_time", "host_name", "user_id"]
+
+    def test_invalid_fields_filtered(self):
+        result = _parse_field_list("host, 123invalid, status")
+        assert result == ["host", "status"]
+
+    def test_empty_string(self):
+        result = _parse_field_list("")
+        assert result == []
+
+    def test_fields_with_extra_whitespace(self):
+        result = _parse_field_list("  host  ,  status  ")
+        assert result == ["host", "status"]
+
+
+class TestExtractFieldsReDoS:
+    """Tests for ReDoS protection in extract_fields_from_spl."""
+
+    def test_large_field_list_performance(self):
+        """Ensure large field lists don't cause exponential backtracking."""
+        # Create SPL with 100 fields
+        field_names = [f"field{i}" for i in range(100)]
+        fields = ", ".join(field_names)
+        spl = f"| stats count by {fields}"
+
+        start = time.time()
+        result = extract_fields_from_spl(spl)
+        elapsed = time.time() - start
+
+        assert elapsed < 1.0  # Should complete in under 1 second
+        assert len(result) == 100
+
+    def test_malformed_trailing_char(self):
+        """Ensure malformed input doesn't cause backtracking."""
+        # Attack pattern: many fields followed by invalid char
+        # This used to cause exponential backtracking with nested quantifiers
+        fields = ", ".join(["a"] * 30)
+        spl = f"| stats count by {fields} X"
+
+        start = time.time()
+        result = extract_fields_from_spl(spl)
+        elapsed = time.time() - start
+
+        assert elapsed < 1.0  # Should complete quickly even with malformed input
+        # All valid 'a' fields should be extracted
+        assert "a" in result
+
+    def test_table_large_field_list(self):
+        """Ensure table command with large field lists is fast."""
+        field_names = [f"col{i}" for i in range(100)]
+        fields = ", ".join(field_names)
+        spl = f"| table {fields}"
+
+        start = time.time()
+        result = extract_fields_from_spl(spl)
+        elapsed = time.time() - start
+
+        assert elapsed < 1.0
+        assert len(result) == 100
+
+    def test_fields_command_large_field_list(self):
+        """Ensure fields command with large field lists is fast."""
+        field_names = [f"field{i}" for i in range(100)]
+        fields = ", ".join(field_names)
+        spl = f"| fields + {fields}"
+
+        start = time.time()
+        result = extract_fields_from_spl(spl)
+        elapsed = time.time() - start
+
+        assert elapsed < 1.0
+        assert len(result) == 100
+
+    def test_mixed_valid_invalid_fields(self):
+        """Test that valid fields are extracted even with invalid ones mixed in."""
+        spl = "| stats count by host, 123bad, status, bad@field, user"
+        result = extract_fields_from_spl(spl)
+
+        assert "host" in result
+        assert "status" in result
+        assert "user" in result
+        # Invalid field names should be filtered out
+        assert "123bad" not in result
+        assert "bad@field" not in result

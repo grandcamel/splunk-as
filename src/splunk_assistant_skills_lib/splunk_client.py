@@ -100,6 +100,45 @@ class SplunkClient:
         else:
             raise ValueError("Must provide either token or username+password")
 
+    def close(self) -> None:
+        """Close the session and release resources.
+
+        This method should be called when you're done using the client
+        to ensure proper cleanup of HTTP connections. Alternatively,
+        use the client as a context manager with `with` statement.
+
+        Example:
+            >>> client = SplunkClient(base_url="...", token="...")
+            >>> try:
+            ...     result = client.get("/server/info")
+            ... finally:
+            ...     client.close()
+        """
+        if self.session:
+            self.session.close()
+
+    def __enter__(self) -> "SplunkClient":
+        """Context manager entry.
+
+        Example:
+            >>> with SplunkClient(base_url="...", token="...") as client:
+            ...     result = client.get("/server/info")
+            ... # Session automatically closed on exit
+        """
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
+        """Context manager exit - close session.
+
+        The session is closed regardless of whether an exception occurred.
+        """
+        self.close()
+
     def _build_url(self, endpoint: str) -> str:
         """Build full URL from endpoint path."""
         endpoint = endpoint.lstrip("/")

@@ -498,6 +498,58 @@ class TestStreamJsonLines:
         assert len(results) == 2
 
 
+class TestSplunkClientResourceManagement:
+    """Tests for resource cleanup."""
+
+    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    def test_close_method(self, mock_session_class):
+        """Test that close() closes the session."""
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        client = SplunkClient(base_url="https://splunk.example.com", token="test")
+        client.close()
+
+        mock_session.close.assert_called_once()
+
+    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    def test_context_manager(self, mock_session_class):
+        """Test that context manager closes session on exit."""
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        with SplunkClient(base_url="https://splunk.example.com", token="test") as client:
+            assert client is not None
+
+        mock_session.close.assert_called_once()
+
+    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    def test_context_manager_on_exception(self, mock_session_class):
+        """Test that context manager closes session even on exception."""
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        with pytest.raises(ValueError):
+            with SplunkClient(
+                base_url="https://splunk.example.com", token="test"
+            ) as client:
+                raise ValueError("test error")
+
+        mock_session.close.assert_called_once()
+
+    @patch("splunk_assistant_skills_lib.splunk_client.requests.Session")
+    def test_close_is_idempotent(self, mock_session_class):
+        """Test that calling close() multiple times is safe."""
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+
+        client = SplunkClient(base_url="https://splunk.example.com", token="test")
+        client.close()
+        client.close()  # Should not raise
+
+        assert mock_session.close.call_count == 2
+
+
 class TestClientProperties:
     """Tests for client properties."""
 
