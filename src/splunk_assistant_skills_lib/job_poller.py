@@ -60,19 +60,54 @@ class JobProgress:
 
         Args:
             data: Job status content dictionary
+
+        Raises:
+            ValueError: If dispatchState is missing or invalid
         """
         self.data = data
-        self.sid = data.get("sid", "")
-        self.state = JobState(data.get("dispatchState", "QUEUED"))
-        self.done_progress = float(data.get("doneProgress", 0))
-        self.event_count = int(data.get("eventCount", 0))
-        self.result_count = int(data.get("resultCount", 0))
-        self.scan_count = int(data.get("scanCount", 0))
-        self.run_duration = float(data.get("runDuration", 0))
-        self.is_done = data.get("isDone", False)
-        self.is_failed = data.get("isFailed", False)
-        self.is_paused = data.get("isPaused", False)
+        self.sid = str(data.get("sid", ""))
+
+        # Validate and parse dispatch state
+        dispatch_state = data.get("dispatchState")
+        if not dispatch_state:
+            raise ValueError("Missing dispatchState in job data")
+        try:
+            self.state = JobState(dispatch_state)
+        except ValueError:
+            raise ValueError(f"Invalid dispatchState: {dispatch_state}")
+
+        # Parse numeric fields with safe defaults
+        self.done_progress = self._safe_float(data.get("doneProgress"), 0.0)
+        self.event_count = self._safe_int(data.get("eventCount"), 0)
+        self.result_count = self._safe_int(data.get("resultCount"), 0)
+        self.scan_count = self._safe_int(data.get("scanCount"), 0)
+        self.run_duration = self._safe_float(data.get("runDuration"), 0.0)
+
+        # Parse boolean fields
+        self.is_done = bool(data.get("isDone", False))
+        self.is_failed = bool(data.get("isFailed", False))
+        self.is_paused = bool(data.get("isPaused", False))
         self.messages: List[Dict[str, Any]] = data.get("messages", [])
+
+    @staticmethod
+    def _safe_int(value: Any, default: int) -> int:
+        """Safely convert value to int with default."""
+        if value is None:
+            return default
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return default
+
+    @staticmethod
+    def _safe_float(value: Any, default: float) -> float:
+        """Safely convert value to float with default."""
+        if value is None:
+            return default
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return default
 
     @property
     def progress_percent(self) -> float:
