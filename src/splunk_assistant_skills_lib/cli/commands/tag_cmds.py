@@ -8,6 +8,7 @@ from splunk_assistant_skills_lib import (
     format_json,
     format_table,
     print_success,
+    validate_path_component,
 )
 
 from ..cli_utils import get_client_from_context, handle_cli_errors
@@ -85,6 +86,9 @@ def add(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -> N
     Example:
         splunk-as tag add "host::webserver01" "production" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+
     client = get_client_from_context(ctx)
 
     # Parse field::value
@@ -101,7 +105,7 @@ def add(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -> N
     }
 
     client.post(
-        f"/servicesNS/nobody/{app}/configs/conf-tags",
+        f"/servicesNS/nobody/{safe_app}/configs/conf-tags",
         data=data,
         operation="add tag",
     )
@@ -120,6 +124,9 @@ def remove(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -
     Example:
         splunk-as tag remove "host::webserver01" "production" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+
     client = get_client_from_context(ctx)
 
     # Parse field::value
@@ -129,11 +136,15 @@ def remove(ctx: click.Context, field_value_pair: str, tag_name: str, app: str) -
 
     field, value = field_value_pair.split("::", 1)
 
-    # Disable the tag
+    # Validate field and value components
+    safe_field = validate_path_component(field, "field")
+    safe_value = validate_path_component(value, "value")
+
+    # Disable the tag (note: validate_path_component already URL-encodes)
     data = {tag_name: "disabled"}
 
     client.post(
-        f"/servicesNS/nobody/{app}/configs/conf-tags/{field}%3A%3A{value}",
+        f"/servicesNS/nobody/{safe_app}/configs/conf-tags/{safe_field}%3A%3A{safe_value}",
         data=data,
         operation="remove tag",
     )

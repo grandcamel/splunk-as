@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import click
 
-from splunk_assistant_skills_lib import format_json, print_success
+from splunk_assistant_skills_lib import (
+    format_json,
+    print_success,
+    validate_path_component,
+)
 
 from ..cli_utils import (
     build_endpoint,
@@ -78,9 +82,13 @@ def get(ctx: click.Context, name: str, app: str, output: str) -> None:
     Example:
         splunk-as alert get "My Alert" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
     response = client.get(
-        f"/servicesNS/-/{app}/saved/searches/{name}", operation="get alert"
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}", operation="get alert"
     )
 
     if "entry" in response and response["entry"]:
@@ -144,18 +152,22 @@ def acknowledge(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as alert acknowledge "My Alert" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
 
     # Get alert group and acknowledge
     response = client.get(
-        f"/servicesNS/-/{app}/alerts/fired_alerts/{name}",
+        f"/servicesNS/-/{safe_app}/alerts/fired_alerts/{safe_name}",
         operation="get fired alert",
     )
 
     if "entry" in response and response["entry"]:
         # Delete the fired alert entry to acknowledge
         client.delete(
-            f"/servicesNS/-/{app}/alerts/fired_alerts/{name}",
+            f"/servicesNS/-/{safe_app}/alerts/fired_alerts/{safe_name}",
             operation="acknowledge alert",
         )
         print_success(f"Acknowledged alert: {name}")
@@ -191,6 +203,9 @@ def create(
     Example:
         splunk-as alert create --name "Error Alert" --search "index=main error" --cron "*/5 * * * *"
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+
     client = get_client_from_context(ctx)
 
     data = {
@@ -204,7 +219,7 @@ def create(
     }
 
     client.post(
-        f"/servicesNS/nobody/{app}/saved/searches",
+        f"/servicesNS/nobody/{safe_app}/saved/searches",
         data=data,
         operation="create alert",
     )

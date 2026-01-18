@@ -11,6 +11,7 @@ from splunk_assistant_skills_lib import (
     format_json,
     print_success,
     print_warning,
+    validate_path_component,
 )
 
 from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
@@ -42,9 +43,13 @@ def list_collections(ctx: click.Context, app: str, output: str) -> None:
     Example:
         splunk-as kvstore list --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+
     client = get_client_from_context(ctx)
     response = client.get(
-        f"/servicesNS/-/{app}/storage/collections/config", operation="list collections"
+        f"/servicesNS/-/{safe_app}/storage/collections/config",
+        operation="list collections",
     )
 
     collections = [
@@ -67,9 +72,12 @@ def create(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as kvstore create my_collection --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+
     client = get_client_from_context(ctx)
     client.post(
-        f"/servicesNS/nobody/{app}/storage/collections/config",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/config",
         data={"name": name},
         operation="create collection",
     )
@@ -88,6 +96,10 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
     Example:
         splunk-as kvstore delete my_collection --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     if not force:
         print_warning(f"This will delete collection: {name}")
         if not click.confirm("Are you sure?"):
@@ -96,7 +108,7 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
 
     client = get_client_from_context(ctx)
     client.delete(
-        f"/servicesNS/nobody/{app}/storage/collections/config/{name}",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/config/{safe_name}",
         operation="delete collection",
     )
     print_success(f"Deleted collection: {name}")
@@ -114,11 +126,15 @@ def insert(ctx: click.Context, collection: str, data: str, app: str) -> None:
     Example:
         splunk-as kvstore insert my_collection '{"name": "test", "value": 123}'
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+
     client = get_client_from_context(ctx)
 
     record = json.loads(data)
     response = client.post(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}",
         json_body=record,
         operation="insert record",
     )
@@ -154,13 +170,17 @@ def query(
     Example:
         splunk-as kvstore query my_collection --query '{"status": "active"}'
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+
     client = get_client_from_context(ctx)
     params: dict[str, Any] = {"limit": limit}
     if query:
         params["query"] = query
 
     response = client.get(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}",
         params=params,
         operation="query records",
     )
@@ -180,9 +200,14 @@ def get(ctx: click.Context, collection: str, key: str, app: str) -> None:
     Example:
         splunk-as kvstore get my_collection record_key_123
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+    safe_key = validate_path_component(key, "key")
+
     client = get_client_from_context(ctx)
     response = client.get(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}/{safe_key}",
         operation="get record",
     )
     click.echo(format_json(response))
@@ -201,11 +226,16 @@ def update(ctx: click.Context, collection: str, key: str, data: str, app: str) -
     Example:
         splunk-as kvstore update my_collection key123 '{"status": "updated"}'
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+    safe_key = validate_path_component(key, "key")
+
     client = get_client_from_context(ctx)
 
     record = json.loads(data)
     client.post(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}/{safe_key}",
         json_body=record,
         operation="update record",
     )
@@ -224,10 +254,15 @@ def delete_record(ctx: click.Context, collection: str, key: str, app: str) -> No
     Example:
         splunk-as kvstore delete-record my_collection key123
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_collection = validate_path_component(collection, "collection")
+    safe_key = validate_path_component(key, "key")
+
     client = get_client_from_context(ctx)
 
     client.delete(
-        f"/servicesNS/nobody/{app}/storage/collections/data/{collection}/{key}",
+        f"/servicesNS/nobody/{safe_app}/storage/collections/data/{safe_collection}/{safe_key}",
         operation="delete record",
     )
     print_success(f"Deleted record: {key}")

@@ -9,6 +9,7 @@ from splunk_assistant_skills_lib import (
     format_saved_search,
     print_success,
     print_warning,
+    validate_path_component,
 )
 
 from ..cli_utils import (
@@ -84,9 +85,14 @@ def get(ctx: click.Context, name: str, app: str, output: str) -> None:
     Example:
         splunk-as savedsearch get "My Report" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
     response = client.get(
-        f"/servicesNS/-/{app}/saved/searches/{name}", operation="get saved search"
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}",
+        operation="get saved search",
     )
 
     if "entry" in response and response["entry"]:
@@ -118,6 +124,9 @@ def create(
     Example:
         splunk-as savedsearch create --name "Daily Report" --search "index=main | stats count"
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+
     client = get_client_from_context(ctx)
 
     data: dict[str, str | bool] = {
@@ -133,7 +142,7 @@ def create(
         data["description"] = description
 
     client.post(
-        f"/servicesNS/nobody/{app}/saved/searches",
+        f"/servicesNS/nobody/{safe_app}/saved/searches",
         data=data,
         operation="create saved search",
     )
@@ -161,6 +170,10 @@ def update(
     Example:
         splunk-as savedsearch update "My Report" --search "index=main | stats count by host"
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
 
     data = {}
@@ -176,7 +189,7 @@ def update(
         return
 
     client.post(
-        f"/servicesNS/-/{app}/saved/searches/{name}",
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}",
         data=data,
         operation="update saved search",
     )
@@ -202,9 +215,13 @@ def run(ctx: click.Context, name: str, app: str, wait: bool, output: str) -> Non
     Example:
         splunk-as savedsearch run "My Report" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
     response = client.post(
-        f"/servicesNS/-/{app}/saved/searches/{name}/dispatch",
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}/dispatch",
         operation="dispatch saved search",
     )
     sid = response.get("sid")
@@ -227,10 +244,14 @@ def enable(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as savedsearch enable "My Report" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
 
     client.post(
-        f"/servicesNS/-/{app}/saved/searches/{name}/enable",
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}/enable",
         operation="enable saved search",
     )
     print_success(f"Enabled saved search: {name}")
@@ -247,10 +268,14 @@ def disable(ctx: click.Context, name: str, app: str) -> None:
     Example:
         splunk-as savedsearch disable "My Report" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     client = get_client_from_context(ctx)
 
     client.post(
-        f"/servicesNS/-/{app}/saved/searches/{name}/disable",
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}/disable",
         operation="disable saved search",
     )
     print_success(f"Disabled saved search: {name}")
@@ -268,6 +293,10 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
     Example:
         splunk-as savedsearch delete "My Report" --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_name = validate_path_component(name, "name")
+
     if not force:
         print_warning(f"This will delete saved search: {name}")
         if not click.confirm("Are you sure?"):
@@ -277,7 +306,7 @@ def delete(ctx: click.Context, name: str, app: str, force: bool) -> None:
     client = get_client_from_context(ctx)
 
     client.delete(
-        f"/servicesNS/-/{app}/saved/searches/{name}",
+        f"/servicesNS/-/{safe_app}/saved/searches/{safe_name}",
         operation="delete saved search",
     )
     print_success(f"Deleted saved search: {name}")
