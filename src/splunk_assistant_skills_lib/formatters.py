@@ -7,6 +7,57 @@ Provides formatting utilities for Splunk data and command output.
 
 from typing import Any, Dict, List, Optional, Union, cast
 
+# Sensitive field patterns to redact from output
+# These are checked case-insensitively against field names
+SENSITIVE_FIELD_PATTERNS = frozenset({
+    "password",
+    "passwd",
+    "token",
+    "api_key",
+    "apikey",
+    "secret",
+    "auth",
+    "authorization",
+    "credential",
+    "private_key",
+    "privatekey",
+    "access_token",
+    "refresh_token",
+    "session_key",
+    "sessionkey",
+    "splunk_token",
+    "bearer",
+})
+
+
+def _is_sensitive_field(field_name: str) -> bool:
+    """Check if a field name contains sensitive data patterns.
+
+    Args:
+        field_name: The field name to check
+
+    Returns:
+        True if the field appears to contain sensitive data
+    """
+    field_lower = field_name.lower()
+    return any(pattern in field_lower for pattern in SENSITIVE_FIELD_PATTERNS)
+
+
+def _redact_sensitive_value(key: str, value: Any) -> Any:
+    """Redact value if the key indicates sensitive data.
+
+    Args:
+        key: The field name
+        value: The field value
+
+    Returns:
+        The original value or "[REDACTED]" if sensitive
+    """
+    if _is_sensitive_field(key):
+        return "[REDACTED]"
+    return value
+
+
 # Import generic formatters and color utilities from the base library
 from assistant_skills_lib.formatters import (
     Colors,
@@ -43,6 +94,8 @@ def format_search_results(
 ) -> str:
     """
     Format search results for display.
+
+    Sensitive fields (passwords, tokens, etc.) are automatically redacted.
     """
     if isinstance(results, dict):
         result_list = results.get("results", results.get("rows", []))
@@ -59,15 +112,21 @@ def format_search_results(
         result_list = result_list[:max_results]
         truncated = True
 
-    if fields is None and result_list:
-        fields = [k for k in result_list[0].keys() if not k.startswith("_")][:10]
+    # Redact sensitive fields from results
+    redacted_results = [
+        {k: _redact_sensitive_value(k, v) for k, v in row.items()}
+        for row in result_list
+    ]
+
+    if fields is None and redacted_results:
+        fields = [k for k in redacted_results[0].keys() if not k.startswith("_")][:10]
 
     if output_format == "json":
-        output = format_json(result_list)
+        output = format_json(redacted_results)
     elif output_format == "csv":
-        output = export_csv_string(result_list, fields)
+        output = export_csv_string(redacted_results, fields)
     else:
-        output = format_table(result_list, columns=fields)
+        output = format_table(redacted_results, columns=fields)
 
     if truncated:
         output += f"\n\n... (showing first {max_results} of more results)"
@@ -112,6 +171,8 @@ def format_job_status(job: Dict[str, Any]) -> str:
 def format_metadata(meta: Dict[str, Any]) -> str:
     """
     Format metadata information for display.
+
+    Sensitive fields (passwords, tokens, etc.) are automatically redacted.
     """
     lines = []
     if "totalEventCount" in meta:
@@ -132,7 +193,9 @@ def format_metadata(meta: Dict[str, Any]) -> str:
     else:
         for key, value in meta.items():
             if not key.startswith("_"):
-                lines.append(f"{key}: {value}")
+                # Redact sensitive fields
+                display_value = _redact_sensitive_value(key, value)
+                lines.append(f"{key}: {display_value}")
     return "\n".join(lines)
 
 
