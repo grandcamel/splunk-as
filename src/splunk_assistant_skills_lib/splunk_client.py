@@ -25,6 +25,7 @@ from typing import Any, Dict, Generator, Iterator, List, Optional, Union, cast
 import requests
 
 from .error_handler import handle_splunk_error
+from .validators import validate_file_path
 
 
 class SplunkClient:
@@ -467,7 +468,13 @@ class SplunkClient:
 
         Returns:
             Parsed JSON response
+
+        Raises:
+            ValidationError: If file path contains traversal attempts
         """
+        # Validate file path to prevent directory traversal
+        file_path = validate_file_path(file_path, "file_path")
+
         url = self._build_url(endpoint)
         request_timeout = timeout or self.timeout
 

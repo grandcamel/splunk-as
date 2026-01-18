@@ -6,8 +6,10 @@ import pytest
 from splunk_assistant_skills_lib.validators import (
     ValidationError,
     validate_app_name,
+    validate_file_path,
     validate_index_name,
     validate_output_mode,
+    validate_path_component,
     validate_port,
     validate_sid,
     validate_spl,
@@ -167,3 +169,69 @@ class TestValidateOutputMode:
     def test_invalid_raises(self):
         with pytest.raises(ValidationError):
             validate_output_mode("invalid")
+
+
+class TestValidateFilePath:
+    """Tests for validate_file_path (path traversal prevention)."""
+
+    def test_valid_simple_path(self):
+        assert validate_file_path("file.txt") == "file.txt"
+
+    def test_valid_relative_path(self):
+        assert validate_file_path("subdir/file.txt") == "subdir/file.txt"
+
+    def test_valid_absolute_path(self):
+        result = validate_file_path("/tmp/file.txt")
+        assert result == "/tmp/file.txt"
+
+    def test_rejects_dot_dot_traversal(self):
+        with pytest.raises(ValidationError, match="Path traversal"):
+            validate_file_path("../etc/passwd")
+
+    def test_rejects_double_dot_in_path(self):
+        with pytest.raises(ValidationError, match="Path traversal"):
+            validate_file_path("subdir/../../../etc/passwd")
+
+    def test_rejects_hidden_traversal(self):
+        with pytest.raises(ValidationError, match="Path traversal"):
+            validate_file_path("foo/..hidden/../bar")
+
+    def test_empty_path_raises(self):
+        with pytest.raises(ValidationError):
+            validate_file_path("")
+
+
+class TestValidatePathComponent:
+    """Tests for validate_path_component (URL path injection prevention)."""
+
+    def test_valid_simple_name(self):
+        result = validate_path_component("myapp")
+        assert result == "myapp"
+
+    def test_valid_name_with_underscore(self):
+        result = validate_path_component("my_app")
+        assert result == "my_app"
+
+    def test_url_encodes_special_chars(self):
+        result = validate_path_component("app name")
+        assert result == "app%20name"
+
+    def test_rejects_path_traversal(self):
+        with pytest.raises(ValidationError, match="Path traversal"):
+            validate_path_component("../admin")
+
+    def test_rejects_forward_slash(self):
+        with pytest.raises(ValidationError, match="Path separators"):
+            validate_path_component("app/admin")
+
+    def test_rejects_backslash(self):
+        with pytest.raises(ValidationError, match="Path separators"):
+            validate_path_component("app\\admin")
+
+    def test_empty_name_raises(self):
+        with pytest.raises(ValidationError):
+            validate_path_component("")
+
+    def test_url_encodes_colon(self):
+        result = validate_path_component("host:value")
+        assert result == "host%3Avalue"

@@ -10,6 +10,7 @@ from splunk_assistant_skills_lib import (
     get_api_settings,
     print_info,
     print_success,
+    validate_file_path,
     validate_spl,
     wait_for_job,
 )
@@ -64,6 +65,9 @@ def results(
     Example:
         splunk-as export results "index=main | stats count by host" -o results.csv
     """
+    # Validate output file path to prevent directory traversal
+    validate_file_path(output_file, "output_file")
+
     api_settings = get_api_settings()
     spl = validate_spl(spl)
     earliest, latest = get_time_bounds(earliest, latest)
@@ -151,6 +155,9 @@ def job(
     Example:
         splunk-as export job 1703779200.12345 -o results.csv
     """
+    # Validate output file path to prevent directory traversal
+    validate_file_path(output_file, "output_file")
+
     client = get_client_from_context(ctx)
     api_settings = get_api_settings()
 

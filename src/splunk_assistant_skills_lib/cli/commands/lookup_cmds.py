@@ -12,6 +12,8 @@ from splunk_assistant_skills_lib import (
     format_table,
     print_success,
     print_warning,
+    validate_file_path,
+    validate_path_component,
 )
 
 from ..cli_utils import build_endpoint, get_client_from_context, handle_cli_errors
@@ -130,10 +132,15 @@ def download(
     """
     client = get_client_from_context(ctx)
 
+    # Validate output file path to prevent directory traversal
     output_file = output_file or lookup_name
+    validate_file_path(output_file, "output_file")
+
+    # Validate lookup_name for URL path safety
+    safe_lookup_name = validate_path_component(lookup_name, "lookup_name")
 
     # Stream lookup contents using export endpoint
-    search = f"| inputlookup {lookup_name}"
+    search = f"| inputlookup {safe_lookup_name}"
     content = client.post_raw(
         "/search/jobs/oneshot",
         data={
@@ -164,11 +171,14 @@ def upload(ctx: click.Context, file_path: str, app: str, name: str | None) -> No
     Example:
         splunk-as lookup upload /path/to/users.csv --app search
     """
+    # Validate file path to prevent directory traversal
+    validate_file_path(file_path, "file_path")
+
     client = get_client_from_context(ctx)
 
     lookup_name = name or os.path.basename(file_path)
 
-    # Upload using multipart form
+    # Upload using multipart form (also validates lookup_name internally)
     client.upload_lookup(file_path, lookup_name, app=app)
 
     print_success(f"Uploaded {file_path} as {lookup_name}")
@@ -186,6 +196,10 @@ def delete(ctx: click.Context, lookup_name: str, app: str, force: bool) -> None:
     Example:
         splunk-as lookup delete old_users.csv --app search
     """
+    # Validate path components to prevent URL path injection
+    safe_app = validate_path_component(app, "app")
+    safe_lookup_name = validate_path_component(lookup_name, "lookup_name")
+
     if not force:
         print_warning(f"This will delete lookup file: {lookup_name}")
         if not click.confirm("Are you sure?"):
@@ -194,7 +208,7 @@ def delete(ctx: click.Context, lookup_name: str, app: str, force: bool) -> None:
 
     client = get_client_from_context(ctx)
 
-    endpoint = f"/servicesNS/-/{app}/data/lookup-table-files/{lookup_name}"
+    endpoint = f"/servicesNS/-/{safe_app}/data/lookup-table-files/{safe_lookup_name}"
     client.delete(endpoint, operation="delete lookup")
 
     print_success(f"Deleted lookup file: {lookup_name}")

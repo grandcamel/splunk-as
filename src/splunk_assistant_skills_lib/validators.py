@@ -178,3 +178,99 @@ def validate_search_mode(mode: str) -> str:
     return cast(
         str, validate_choice(mode, ["normal", "blocking", "oneshot"], "exec_mode")
     )
+
+
+def validate_file_path(file_path: str, param_name: str = "file_path") -> str:
+    """
+    Validate file path to prevent directory traversal attacks.
+
+    Args:
+        file_path: Path to validate
+        param_name: Parameter name for error messages
+
+    Returns:
+        Validated file path
+
+    Raises:
+        ValidationError: If path contains traversal attempts
+    """
+    from pathlib import Path
+
+    file_path = validate_required(file_path, param_name)
+
+    # Check for explicit path traversal patterns
+    if ".." in file_path:
+        raise ValidationError(
+            f"Path traversal detected in {param_name}: '..' not allowed",
+            operation="validation",
+            details={"field": param_name},
+        )
+
+    # Resolve to absolute and check it doesn't escape via symlinks
+    # Note: We validate the literal path, not resolved symlinks
+    path = Path(file_path)
+    if path.is_absolute():
+        # For absolute paths, just check no .. components
+        for part in path.parts:
+            if part == "..":
+                raise ValidationError(
+                    f"Path traversal detected in {param_name}",
+                    operation="validation",
+                    details={"field": param_name},
+                )
+    else:
+        # For relative paths, ensure it doesn't escape current directory
+        try:
+            # Resolve relative to current working directory
+            resolved = path.resolve()
+            cwd = Path.cwd().resolve()
+            # Check the resolved path is within or at cwd
+            resolved.relative_to(cwd)
+        except ValueError:
+            raise ValidationError(
+                f"Path {param_name} would escape current directory",
+                operation="validation",
+                details={"field": param_name},
+            )
+
+    return file_path
+
+
+def validate_path_component(component: str, param_name: str = "name") -> str:
+    """
+    Validate and sanitize a path component for use in URLs.
+
+    Prevents path injection by rejecting components with path separators
+    or traversal patterns. Returns URL-encoded component.
+
+    Args:
+        component: Path component to validate (e.g., app name, lookup name)
+        param_name: Parameter name for error messages
+
+    Returns:
+        URL-encoded path component
+
+    Raises:
+        ValidationError: If component contains disallowed characters
+    """
+    from urllib.parse import quote
+
+    component = validate_required(component, param_name)
+
+    # Reject path traversal and separator characters
+    if ".." in component:
+        raise ValidationError(
+            f"Path traversal detected in {param_name}: '..' not allowed",
+            operation="validation",
+            details={"field": param_name},
+        )
+
+    if "/" in component or "\\" in component:
+        raise ValidationError(
+            f"Path separators not allowed in {param_name}",
+            operation="validation",
+            details={"field": param_name},
+        )
+
+    # URL-encode to prevent any special character issues
+    return quote(component, safe="")
