@@ -20,6 +20,7 @@ Environment Variables:
     SPLUNK_DEFAULT_INDEX - Default search index
 """
 
+import threading
 from typing import Any, Dict, Optional, cast
 
 from assistant_skills_lib.config_manager import BaseConfigManager
@@ -172,15 +173,22 @@ class ConfigManager(BaseConfigManager):
         return errors
 
 
-# Global config manager instance
+# Global config manager instance with thread-safe initialization
 _config_manager: Optional[ConfigManager] = None
+_config_manager_lock = threading.Lock()
 
 
 def get_config_manager() -> ConfigManager:
-    """Get or create global ConfigManager instance."""
+    """Get or create global ConfigManager instance.
+
+    Thread-safe singleton access using double-checked locking pattern.
+    """
     global _config_manager
     if _config_manager is None:
-        _config_manager = ConfigManager.get_instance()
+        with _config_manager_lock:
+            # Double-check after acquiring lock
+            if _config_manager is None:
+                _config_manager = ConfigManager.get_instance()
     return _config_manager
 
 
