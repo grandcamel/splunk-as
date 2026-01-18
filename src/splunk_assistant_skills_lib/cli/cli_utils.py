@@ -20,6 +20,7 @@ from splunk_assistant_skills_lib import (
     ValidationError,
     get_splunk_client,
     print_error,
+    validate_path_component,
     validate_sid,
 )
 
@@ -308,6 +309,9 @@ def build_endpoint(
     Returns:
         Full endpoint path with namespace prefix if app/owner specified
 
+    Raises:
+        ValidationError: If app or owner contain path traversal attempts
+
     Examples:
         >>> build_endpoint("/saved/searches")
         '/saved/searches'
@@ -316,6 +320,12 @@ def build_endpoint(
         >>> build_endpoint("/saved/searches", app="search", owner="admin")
         '/servicesNS/admin/search/saved/searches'
     """
+    # Validate path components to prevent URL path injection
+    if app:
+        app = validate_path_component(app, "app")
+    if owner:
+        owner = validate_path_component(owner, "owner")
+
     if app and owner:
         return f"/servicesNS/{owner}/{app}{base_path}"
     elif app:

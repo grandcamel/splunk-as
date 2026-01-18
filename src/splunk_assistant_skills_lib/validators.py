@@ -192,7 +192,7 @@ def validate_file_path(file_path: str, param_name: str = "file_path") -> str:
         Validated file path
 
     Raises:
-        ValidationError: If path contains traversal attempts
+        ValidationError: If path contains traversal attempts or is a symlink
     """
     from pathlib import Path
 
@@ -206,9 +206,16 @@ def validate_file_path(file_path: str, param_name: str = "file_path") -> str:
             details={"field": param_name},
         )
 
-    # Resolve to absolute and check it doesn't escape via symlinks
-    # Note: We validate the literal path, not resolved symlinks
     path = Path(file_path)
+
+    # Reject symlinks to prevent symlink-based path traversal
+    if path.is_symlink():
+        raise ValidationError(
+            f"Symlinks not allowed in {param_name}",
+            operation="validation",
+            details={"field": param_name},
+        )
+
     if path.is_absolute():
         # For absolute paths, just check no .. components
         for part in path.parts:

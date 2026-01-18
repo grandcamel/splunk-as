@@ -650,8 +650,8 @@ class SplunkClient:
         if successful_rows == 0:
             raise ValueError("No valid rows to upload after parsing CSV")
 
-        # Add outputlookup
-        spl = " ".join(spl_parts) + f" | outputlookup {lookup_name}"
+        # Add outputlookup (quote name for defense-in-depth)
+        spl = " ".join(spl_parts) + f' | outputlookup "{lookup_name}"'
 
         request_timeout = timeout or self.DEFAULT_SEARCH_TIMEOUT
 
