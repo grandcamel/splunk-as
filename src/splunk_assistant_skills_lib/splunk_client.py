@@ -173,15 +173,10 @@ class SplunkClient:
 
                 return response
 
-            except requests.exceptions.Timeout as e:
-                last_exception = e
-                if attempt < self.max_retries:
-                    wait_time = self.retry_backoff**attempt
-                    time.sleep(wait_time)
-                    continue
-                raise
-
-            except requests.exceptions.ConnectionError as e:
+            except (
+                requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+            ) as e:
                 last_exception = e
                 if attempt < self.max_retries:
                     wait_time = self.retry_backoff**attempt
