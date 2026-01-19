@@ -368,10 +368,11 @@ class TestGlobalFunctions:
 
     def test_get_config_manager_creates_singleton(self):
         """Test get_config_manager creates singleton."""
-        # Reset the global
+        # Reset the global (thread-safe)
         import splunk_assistant_skills_lib.config_manager as cm
 
-        cm._config_manager = None
+        with cm._config_manager_lock:
+            cm._config_manager = None
 
         result1 = get_config_manager()
         result2 = get_config_manager()
@@ -457,15 +458,13 @@ class TestGlobalFunctions:
 class TestThreadSafety:
     """Tests for thread-safe singleton access."""
 
-    @patch("splunk_assistant_skills_lib.config_manager.ConfigManager.get_instance")
-    def test_concurrent_access(self, mock_get_instance):
+    def test_concurrent_access(self):
         """Test concurrent access to get_config_manager."""
-        mock_instance = MagicMock(spec=ConfigManager)
-        mock_get_instance.return_value = mock_instance
-
-        # Reset the global
+        # Reset the global (thread-safe)
         import splunk_assistant_skills_lib.config_manager as cm
-        cm._config_manager = None
+
+        with cm._config_manager_lock:
+            cm._config_manager = None
 
         results = []
         errors = []
