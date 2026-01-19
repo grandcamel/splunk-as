@@ -129,6 +129,16 @@ from .time_utils import (
     time_to_epoch,
     validate_time_range,
 )
+from .search_context import (
+    SearchContext,
+    clear_context_cache,
+    format_context_summary,
+    get_common_fields,
+    get_common_sourcetypes,
+    get_search_context,
+    has_search_context,
+    suggest_spl_prefix,
+)
 from .validators import (
     validate_app_name,
     validate_count,
@@ -260,4 +270,13 @@ __all__ = [
     "time_to_epoch",
     "epoch_to_iso",
     "get_search_time_bounds",
+    # Search Context
+    "SearchContext",
+    "get_search_context",
+    "clear_context_cache",
+    "has_search_context",
+    "get_common_sourcetypes",
+    "get_common_fields",
+    "suggest_spl_prefix",
+    "format_context_summary",
 ]
