@@ -70,7 +70,16 @@ packages = ["src/splunk_assistant_skills_lib"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "unit: Unit tests (fast, no external calls)",
+    "integration: Integration tests (may require credentials)",
+    "slow: Slow running tests",
+    "live: Tests requiring live credentials",
+    "destructive: Tests that modify data",
+]
 
 [tool.black]
 line-length = 88

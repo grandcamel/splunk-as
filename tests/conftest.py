@@ -1,10 +1,53 @@
 #!/usr/bin/env python3
-"""Shared pytest fixtures for splunk-assistant-skills-lib tests."""
+"""
+Shared pytest fixtures for splunk-assistant-skills-lib tests.
 
-import os
+Provides common fixtures used across all tests.
+This root conftest.py centralizes:
+- pytest hooks (addoption, configure, collection_modifyitems)
+- Mock client fixtures
+- Sample response fixtures
+"""
+
 from unittest.mock import Mock
 
 import pytest
+
+# =============================================================================
+# PYTEST HOOKS
+# =============================================================================
+
+
+def pytest_addoption(parser):
+    """Add custom command-line options."""
+    parser.addoption(
+        "--live", action="store_true", default=False, help="Run live integration tests"
+    )
+
+
+def pytest_configure(config):
+    """Configure pytest with custom markers."""
+    config.addinivalue_line("markers", "unit: Unit tests (fast, no external calls)")
+    config.addinivalue_line(
+        "markers", "integration: Integration tests (may require credentials)"
+    )
+    config.addinivalue_line("markers", "slow: Slow running tests")
+    config.addinivalue_line("markers", "live: Tests requiring live credentials")
+    config.addinivalue_line("markers", "destructive: Tests that modify data")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip live tests unless --live is provided."""
+    if not config.getoption("--live"):
+        skip_live = pytest.mark.skip(reason="Need --live to run")
+        for item in items:
+            if "live" in item.keywords:
+                item.add_marker(skip_live)
+
+
+# =============================================================================
+# CLIENT MOCK FIXTURES
+# =============================================================================
 
 
 @pytest.fixture
@@ -23,6 +66,11 @@ def mock_splunk_client():
     client.delete.return_value = {}
 
     return client
+
+
+# =============================================================================
+# CONFIGURATION FIXTURES
+# =============================================================================
 
 
 @pytest.fixture
@@ -50,6 +98,11 @@ def mock_config():
             },
         }
     }
+
+
+# =============================================================================
+# SAMPLE RESPONSE FIXTURES
+# =============================================================================
 
 
 @pytest.fixture
@@ -87,13 +140,3 @@ def sample_search_results():
             {"host": "server3", "status": "404", "count": "25"},
         ]
     }
-
-
-# Markers
-def pytest_configure(config):
-    """Register custom markers."""
-    config.addinivalue_line(
-        "markers", "live: marks tests as requiring live Splunk connection"
-    )
-    config.addinivalue_line("markers", "destructive: marks tests that modify data")
-    config.addinivalue_line("markers", "slow: marks tests as slow running")
