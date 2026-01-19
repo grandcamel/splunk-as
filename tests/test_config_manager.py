@@ -366,20 +366,19 @@ class TestValidateConfig:
 class TestGlobalFunctions:
     """Tests for global configuration functions."""
 
-    @patch("splunk_assistant_skills_lib.config_manager._config_manager", None)
-    @patch("splunk_assistant_skills_lib.config_manager.ConfigManager.get_instance")
-    def test_get_config_manager_creates_singleton(self, mock_get_instance):
+    def test_get_config_manager_creates_singleton(self):
         """Test get_config_manager creates singleton."""
-        mock_instance = MagicMock(spec=ConfigManager)
-        mock_get_instance.return_value = mock_instance
-
         # Reset the global
         import splunk_assistant_skills_lib.config_manager as cm
+
         cm._config_manager = None
 
-        result = get_config_manager()
-        assert result is mock_instance
-        mock_get_instance.assert_called_once()
+        result1 = get_config_manager()
+        result2 = get_config_manager()
+
+        # Should return same instance (singleton behavior)
+        assert result1 is result2
+        assert isinstance(result1, ConfigManager)
 
     @patch("splunk_assistant_skills_lib.config_manager.get_config_manager")
     def test_get_config(self, mock_get_manager):

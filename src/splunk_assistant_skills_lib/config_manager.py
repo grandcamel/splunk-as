@@ -188,7 +188,7 @@ def get_config_manager() -> ConfigManager:
         with _config_manager_lock:
             # Double-check after acquiring lock
             if _config_manager is None:
-                _config_manager = ConfigManager.get_instance()
+                _config_manager = ConfigManager()
     return _config_manager
 
 
