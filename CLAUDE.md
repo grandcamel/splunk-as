@@ -71,9 +71,23 @@ This is a Python library for interacting with the Splunk REST API. The package i
 
 ### Test Markers
 
-- `@pytest.mark.live` - requires live Splunk connection
-- `@pytest.mark.destructive` - modifies data
-- `@pytest.mark.slow` - slow running tests
+```bash
+# Run only unit tests
+pytest -m unit
+
+# Skip slow tests
+pytest -m "not slow"
+
+# Run live integration tests (requires credentials)
+pytest --live
+```
+
+Available markers:
+- `@pytest.mark.unit` - Fast unit tests, no external calls
+- `@pytest.mark.integration` - Integration tests
+- `@pytest.mark.slow` - Slow running tests
+- `@pytest.mark.live` - Tests requiring live Splunk connection
+- `@pytest.mark.destructive` - Tests that modify data
 
 ## Coding Patterns
 
