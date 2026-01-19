@@ -10,6 +10,7 @@ A shared library for interacting with the Splunk REST API, providing:
     - spl_helper: SPL query building and parsing
     - job_poller: Async job state polling
     - time_utils: Splunk time modifier handling
+    - mock: Mixin-based mock client for testing
 
 Example usage:
     from splunk_assistant_skills_lib import get_splunk_client, handle_errors
@@ -19,6 +20,12 @@ Example usage:
         client = get_splunk_client()
         results = client.post('/search/jobs/oneshot', data={'search': 'index=main | head 10'})
         print(results)
+
+For testing:
+    from splunk_assistant_skills_lib.mock import MockSplunkClient
+
+    client = MockSplunkClient()
+    result = client.oneshot_search("index=main | head 10")
 """
 
 from .config_manager import (
@@ -30,6 +37,10 @@ from .config_manager import (
     get_config_manager,
     get_search_defaults,
     get_splunk_client,
+)
+from .credential_manager import (
+    SplunkCredentialManager,
+    get_credential_manager,
 )
 from .error_handler import (
     AuthenticationError,
@@ -150,6 +161,9 @@ __all__ = [
     "get_search_defaults",
     "DEFAULT_EARLIEST_TIME",
     "DEFAULT_LATEST_TIME",
+    # Credentials
+    "SplunkCredentialManager",
+    "get_credential_manager",
     # Errors
     "SplunkError",
     "AuthenticationError",
