@@ -134,3 +134,41 @@ When adding new CLI commands:
 - `JobProgress` validates `dispatchState` and uses `_safe_int()`/`_safe_float()` for defensive parsing
 - All HTTP errors go through `handle_splunk_error()` which raises typed exceptions
 - CLI commands use `@handle_cli_errors` decorator for user-friendly error messages
+
+### Splunk API Quirks
+
+**Numeric fields returned as strings**: Some Splunk API responses return numeric values as strings (e.g., `currentDBSizeMB`, `totalEventCount`). Always use explicit type conversion when formatting:
+
+```python
+# Wrong - will fail with "Unknown format code 'f' for object of type 'str'"
+f"{content.get('currentDBSizeMB', 0):.2f}"
+
+# Correct - explicit conversion handles string values
+f"{float(content.get('currentDBSizeMB', 0) or 0):.2f}"
+f"{int(content.get('totalEventCount', 0) or 0):,}"
+```
+
+## Testing with Live Splunk
+
+### Using splunk-demo Container
+
+The `splunk-demo` project provides a Docker-based Splunk instance for testing:
+
+```bash
+cd /path/to/splunk-demo
+
+# Start Splunk with Enterprise trial (required for remote auth)
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d splunk
+
+# Wait for healthy status
+docker inspect --format="{{.State.Health.Status}}" splunk-demo-splunk
+
+# Test CLI
+export SPLUNK_SITE_URL="https://localhost"
+export SPLUNK_USERNAME="admin"
+export SPLUNK_PASSWORD="DemoPass123!"
+export SPLUNK_VERIFY_SSL="false"
+splunk-as metadata indexes
+```
+
+**Important**: Splunk Free license does NOT support remote authentication. The container must use Enterprise trial license (comment out `SPLUNK_LICENSE_URI: Free` in docker-compose.yml).
