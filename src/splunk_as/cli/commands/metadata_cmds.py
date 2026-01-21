@@ -56,8 +56,8 @@ def indexes(ctx: click.Context, filter_pattern: str | None, output: str) -> None
         indexes_list.append(
             {
                 "Index": name,
-                "Events": f"{content.get('totalEventCount', 0):,}",
-                "Size (MB)": f"{content.get('currentDBSizeMB', 0):.0f}",
+                "Events": f"{int(content.get('totalEventCount', 0) or 0):,}",
+                "Size (MB)": f"{float(content.get('currentDBSizeMB', 0) or 0):.0f}",
                 "Disabled": "Yes" if content.get("disabled", False) else "No",
             }
         )
@@ -97,8 +97,8 @@ def index_info(ctx: click.Context, index_name: str, output: str) -> None:
             output_results(content, output)
         else:
             click.echo(f"Index: {index_name}")
-            click.echo(f"Total Events: {content.get('totalEventCount', 0):,}")
-            click.echo(f"Current Size: {content.get('currentDBSizeMB', 0):.2f} MB")
+            click.echo(f"Total Events: {int(content.get('totalEventCount', 0) or 0):,}")
+            click.echo(f"Current Size: {float(content.get('currentDBSizeMB', 0) or 0):.2f} MB")
             click.echo(f"Max Size: {content.get('maxDataSizeMB', 0)} MB")
             click.echo(f"Disabled: {content.get('disabled', False)}")
             click.echo(f"Data Type: {content.get('datatype', 'event')}")
