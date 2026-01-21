@@ -54,10 +54,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/grandcamel/splunk-assistant-skills-lib"
-Repository = "https://github.com/grandcamel/splunk-assistant-skills-lib"
-Issues = "https://github.com/grandcamel/splunk-assistant-skills-lib/issues"
-Changelog = "https://github.com/grandcamel/splunk-assistant-skills-lib/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/grandcamel/splunk-as"
+Repository = "https://github.com/grandcamel/splunk-as"
+Issues = "https://github.com/grandcamel/splunk-as/issues"
+Changelog = "https://github.com/grandcamel/splunk-as/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.sdist]
 include = [
