@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-01-31
+
+### Added
+
+- **App Commands**: Full implementation of `app install` command
+  - Supports .tar.gz, .tgz, and .spl package formats via multipart file upload
+  - `--name` option to override app name from package
+  - `--update` flag to update existing apps
+  - Path traversal validation for package paths
+- **Metrics Commands**: New `mpreview` command to preview raw metric data points
+  - Shows individual measurements without aggregation
+  - Filter by index, metric name, and filter expressions
+  - Configurable result count
+
 ## [1.1.1] - 2025-01-31
 
 ### Added
