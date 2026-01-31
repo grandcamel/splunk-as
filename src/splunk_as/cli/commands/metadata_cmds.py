@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import click
 
-from splunk_as import (
-    ValidationError,
-    validate_index_name,
-    validate_path_component,
-)
+from splunk_as import ValidationError, validate_index_name, validate_path_component
 
 from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
 
@@ -45,7 +41,12 @@ def indexes(ctx: click.Context, filter_pattern: str | None, output: str) -> None
         splunk-as metadata indexes
     """
     client = get_client_from_context(ctx)
-    response = client.get("/data/indexes", operation="list indexes")
+    # Use count=-1 to get all indexes (default is 30) and datatype=all to include metrics
+    response = client.get(
+        "/data/indexes",
+        params={"count": -1, "datatype": "all"},
+        operation="list indexes",
+    )
 
     indexes_list = []
     for entry in response.get("entry", []):
@@ -98,8 +99,12 @@ def index_info(ctx: click.Context, index_name: str, output: str) -> None:
         else:
             click.echo(f"Index: {index_name}")
             click.echo(f"Total Events: {int(content.get('totalEventCount', 0) or 0):,}")
-            click.echo(f"Current Size: {float(content.get('currentDBSizeMB', 0) or 0):.2f} MB")
-            click.echo(f"Max Size: {content.get('maxDataSizeMB', 0)} MB")
+            click.echo(
+                f"Current Size: {float(content.get('currentDBSizeMB', 0) or 0):.2f} MB"
+            )
+            click.echo(
+                f"Max Size: {float(content.get('maxTotalDataSizeMB', 0) or 0):.0f} MB"
+            )
             click.echo(f"Disabled: {content.get('disabled', False)}")
             click.echo(f"Data Type: {content.get('datatype', 'event')}")
 
