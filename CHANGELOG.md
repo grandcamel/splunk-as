@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-01-31
+
+### Added
+
+- `job touch` CLI command to extend job TTL without specifying explicit value
+
+### Fixed
+
+- **Search Commands**: Use `max_count` instead of `count` parameter for oneshot search job creation (results were being truncated to default 10,000)
+- **Security Commands**: Use `expires_on` instead of `expiresOn` parameter for token creation (expiration was being ignored)
+- **Job Commands**: Use v2 endpoints (`/search/v2/jobs`) for list and delete operations instead of deprecated v1 endpoints
+- **Metadata Commands**:
+  - Add `count=-1` parameter to return all indexes (default was only 30)
+  - Add `datatype=all` parameter to include metrics indexes
+  - Fix field name `maxTotalDataSizeMB` (was `maxDataSizeMB`)
+  - Add explicit type conversion for numeric fields returned as strings
+- **Tag Commands**:
+  - Add validation for field, value, and tag_name parameters
+  - Fix double URL encoding in remove command
+- **Alert Commands**:
+  - Add required `alert.suppress=0` parameter to distinguish alerts from reports
+  - Fix list filter to use client-side filtering (REST API doesn't support SPL-style search param)
+- **Metrics Commands**:
+  - Expand aggregation functions to include stdev, median, range, var, rate, earliest, latest, values, dc
+  - Add explicit type conversion for numeric fields
+
+## [1.1.0] - 2025-01-30
+
+### Fixed
+
+- Ensure IndexFactory returns string types for API fidelity
+
 ## [1.0.0] - 2025-01-20
 
 ### Changed
