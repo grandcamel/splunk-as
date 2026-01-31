@@ -108,7 +108,9 @@ class TestGetEnvOverrides:
         manager.env_prefix = "SPLUNK"
         return manager
 
-    @patch.dict(os.environ, {"SPLUNK_SITE_URL": "https://splunk.example.com"}, clear=True)
+    @patch.dict(
+        os.environ, {"SPLUNK_SITE_URL": "https://splunk.example.com"}, clear=True
+    )
     def test_url_override(self):
         """Test URL environment variable override."""
         with patch.object(ConfigManager, "__init__", lambda x: None):

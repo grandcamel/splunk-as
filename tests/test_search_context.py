@@ -230,9 +230,7 @@ class TestLoadSkillContext:
         defaults = {"earliest_time": "-1h"}
         (skill_path / "defaults.json").write_text(json.dumps(defaults))
 
-        with patch(
-            "splunk_as.search_context.get_index_skill_path"
-        ) as mock:
+        with patch("splunk_as.search_context.get_index_skill_path") as mock:
             mock.return_value = skill_path
             result = load_skill_context("main")
 
@@ -247,9 +245,7 @@ class TestLoadSettingsContext:
 
     def test_no_settings_file(self, tmp_path):
         """Test returns None when no settings file."""
-        with patch(
-            "splunk_as.search_context.get_skills_root"
-        ) as mock:
+        with patch("splunk_as.search_context.get_skills_root") as mock:
             mock.return_value = tmp_path / ".claude"
             result = load_settings_context("main")
         assert result is None
@@ -262,15 +258,16 @@ class TestLoadSettingsContext:
         settings = {
             "splunk": {
                 "indexes": {
-                    "main": {"defaults": {"earliest_time": "-4h"}, "metadata": {"note": "test"}}
+                    "main": {
+                        "defaults": {"earliest_time": "-4h"},
+                        "metadata": {"note": "test"},
+                    }
                 }
             }
         }
         (tmp_path / "settings.local.json").write_text(json.dumps(settings))
 
-        with patch(
-            "splunk_as.search_context.get_skills_root"
-        ) as mock:
+        with patch("splunk_as.search_context.get_skills_root") as mock:
             mock.return_value = claude_dir
             result = load_settings_context("main")
 
@@ -286,9 +283,7 @@ class TestLoadSettingsContext:
         settings = {"splunk": {"indexes": {}}}
         (tmp_path / "settings.local.json").write_text(json.dumps(settings))
 
-        with patch(
-            "splunk_as.search_context.get_skills_root"
-        ) as mock:
+        with patch("splunk_as.search_context.get_skills_root") as mock:
             mock.return_value = claude_dir
             result = load_settings_context("main")
 
@@ -368,9 +363,7 @@ class TestGetSearchContext:
 
     def test_caches_context(self):
         """Test context is cached."""
-        with patch(
-            "splunk_as.search_context.load_skill_context"
-        ) as mock_skill:
+        with patch("splunk_as.search_context.load_skill_context") as mock_skill:
             with patch(
                 "splunk_as.search_context.load_settings_context"
             ) as mock_settings:
@@ -386,9 +379,7 @@ class TestGetSearchContext:
 
     def test_force_refresh_bypasses_cache(self):
         """Test force_refresh bypasses cache."""
-        with patch(
-            "splunk_as.search_context.load_skill_context"
-        ) as mock_skill:
+        with patch("splunk_as.search_context.load_skill_context") as mock_skill:
             with patch(
                 "splunk_as.search_context.load_settings_context"
             ) as mock_settings:
@@ -405,9 +396,7 @@ class TestGetSearchContext:
         skill_ctx = {"metadata": {"sourcetypes": ["syslog"]}}
         settings_ctx = {"defaults": {"earliest_time": "-1h"}}
 
-        with patch(
-            "splunk_as.search_context.load_skill_context"
-        ) as mock_skill:
+        with patch("splunk_as.search_context.load_skill_context") as mock_skill:
             with patch(
                 "splunk_as.search_context.load_settings_context"
             ) as mock_settings:
@@ -483,7 +472,9 @@ class TestGetCommonSourcetypes:
         """Test returns sourcetypes sorted by frequency."""
         ctx = SearchContext(
             index="main",
-            patterns={"sourcetypes": {"syslog": 100, "access_combined": 500, "audit": 50}},
+            patterns={
+                "sourcetypes": {"syslog": 100, "access_combined": 500, "audit": 50}
+            },
         )
 
         result = get_common_sourcetypes(ctx)

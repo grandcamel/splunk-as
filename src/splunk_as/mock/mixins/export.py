@@ -220,9 +220,7 @@ class ExportMixin:
         for row in data:
             yield row
 
-    def _export_csv(
-        self, data: List[Dict[str, Any]]
-    ) -> Generator[bytes, None, None]:
+    def _export_csv(self, data: List[Dict[str, Any]]) -> Generator[bytes, None, None]:
         """Generate CSV export chunks.
 
         Args:
@@ -254,9 +252,7 @@ class ExportMixin:
         if chunk_rows:
             yield ("\n".join(chunk_rows) + "\n").encode("utf-8")
 
-    def _export_json(
-        self, data: List[Dict[str, Any]]
-    ) -> Generator[bytes, None, None]:
+    def _export_json(self, data: List[Dict[str, Any]]) -> Generator[bytes, None, None]:
         """Generate JSON export chunks.
 
         Args:
@@ -286,9 +282,7 @@ class ExportMixin:
         for row in data:
             yield (json.dumps(row) + "\n").encode("utf-8")
 
-    def _generate_default_export_data(
-        self, spl: str = ""
-    ) -> List[Dict[str, Any]]:
+    def _generate_default_export_data(self, spl: str = "") -> List[Dict[str, Any]]:
         """Generate default export data.
 
         Args:
@@ -300,16 +294,18 @@ class ExportMixin:
         # Generate 100 rows of sample data
         results = []
         for i in range(100):
-            results.append({
-                "_time": f"2024-01-01T{12 + (i // 60):02d}:{i % 60:02d}:00",
-                "_raw": f"Sample log event {i}",
-                "host": f"server{(i % 5) + 1}",
-                "source": "/var/log/app.log",
-                "sourcetype": "app_logs",
-                "index": "main",
-                "linecount": "1",
-                "splunk_server": "mock-splunk",
-            })
+            results.append(
+                {
+                    "_time": f"2024-01-01T{12 + (i // 60):02d}:{i % 60:02d}:00",
+                    "_raw": f"Sample log event {i}",
+                    "host": f"server{(i % 5) + 1}",
+                    "source": "/var/log/app.log",
+                    "sourcetype": "app_logs",
+                    "index": "main",
+                    "linecount": "1",
+                    "splunk_server": "mock-splunk",
+                }
+            )
         return results
 
     def _record_call(self, *args: Any, **kwargs: Any) -> None:

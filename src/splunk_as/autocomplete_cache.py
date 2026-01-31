@@ -21,7 +21,6 @@ from typing import Any
 
 from assistant_skills_lib.cache import SkillCache, get_skill_cache
 
-
 # Default TTL for autocomplete suggestions
 DEFAULT_SUGGESTION_TTL = timedelta(hours=24)
 

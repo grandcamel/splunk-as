@@ -329,9 +329,7 @@ class SearchMixin:
                 },
             ]
 
-    def _extract_fields(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, str]]:
+    def _extract_fields(self, results: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """Extract field metadata from results.
 
         Args:

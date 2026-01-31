@@ -194,7 +194,11 @@ class JobMixin:
 
         return {
             "entry": [{"name": j["sid"], "content": j} for j in paginated],
-            "paging": {"total": len(self._jobs), "offset": offset, "count": len(paginated)},
+            "paging": {
+                "total": len(self._jobs),
+                "offset": offset,
+                "count": len(paginated),
+            },
         }
 
     def cancel_job(self, sid: str) -> Dict[str, Any]:

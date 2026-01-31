@@ -5,8 +5,9 @@ Fixtures for live integration tests against real Splunk instances.
 """
 
 import os
-import pytest
 from typing import Generator
+
+import pytest
 
 
 def pytest_configure(config):
@@ -70,4 +71,5 @@ def splunk_client(splunk_credentials):
 def test_index_name() -> str:
     """Generate a unique test index name."""
     import time
+
     return f"test_live_{int(time.time())}"

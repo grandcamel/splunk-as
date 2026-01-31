@@ -216,9 +216,7 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return result
 
 
-def get_search_context(
-    index_name: str, force_refresh: bool = False
-) -> SearchContext:
+def get_search_context(index_name: str, force_refresh: bool = False) -> SearchContext:
     """
     Lazy-load search context with caching.
 

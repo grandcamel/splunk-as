@@ -36,21 +36,26 @@ class TestIndexesLive:
 
             # These fields are strings in the real API
             if "totalEventCount" in content:
-                assert isinstance(content["totalEventCount"], str), (
-                    f"totalEventCount should be string, got {type(content['totalEventCount'])}"
-                )
+                assert isinstance(
+                    content["totalEventCount"], str
+                ), f"totalEventCount should be string, got {type(content['totalEventCount'])}"
 
             if "currentDBSizeMB" in content:
-                assert isinstance(content["currentDBSizeMB"], str), (
-                    f"currentDBSizeMB should be string, got {type(content['currentDBSizeMB'])}"
-                )
+                assert isinstance(
+                    content["currentDBSizeMB"], str
+                ), f"currentDBSizeMB should be string, got {type(content['currentDBSizeMB'])}"
 
             # disabled is "true" or "false" string in some API versions
             if "disabled" in content:
                 # Can be bool or string depending on API version
-                assert content["disabled"] in (True, False, "true", "false", "0", "1"), (
-                    f"disabled has unexpected value: {content['disabled']}"
-                )
+                assert content["disabled"] in (
+                    True,
+                    False,
+                    "true",
+                    "false",
+                    "0",
+                    "1",
+                ), f"disabled has unexpected value: {content['disabled']}"
 
     def test_get_index_details(self, splunk_client):
         """Should get details for a specific index."""

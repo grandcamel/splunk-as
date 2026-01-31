@@ -293,11 +293,15 @@ class IndexFactory:
         """
         entries = []
         for i, name in enumerate(indexes):
-            count = event_counts[i] if event_counts and i < len(event_counts) else 100000
-            entries.append({
-                "name": name,
-                "content": IndexFactory.index_entry(name, event_count=count),
-            })
+            count = (
+                event_counts[i] if event_counts and i < len(event_counts) else 100000
+            )
+            entries.append(
+                {
+                    "name": name,
+                    "content": IndexFactory.index_entry(name, event_count=count),
+                }
+            )
 
         return {
             "entry": entries,

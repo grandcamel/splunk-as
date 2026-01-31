@@ -49,22 +49,29 @@ Example usage:
 from .base import MockSplunkClientBase, is_mock_mode
 
 # Full and composed clients
-from .client import (
-    MockSplunkClient,
-    # Skill-specific clients
-    MockSearchClient,
-    MockJobClient,
-    MockMetadataClient,
+from .client import (  # Skill-specific clients; Combination clients; Factory functions
     MockAdminClient,
     MockExportClient,
-    # Combination clients
-    MockSearchJobClient,
-    MockSearchExportClient,
     MockFullSearchClient,
-    # Factory functions
-    create_mock_client,
+    MockJobClient,
+    MockMetadataClient,
+    MockSearchClient,
+    MockSearchExportClient,
+    MockSearchJobClient,
+    MockSplunkClient,
     create_cloud_mock,
     create_minimal_mock,
+    create_mock_client,
+)
+
+# Response factories
+from .factories import (
+    IndexFactory,
+    JobFactory,
+    ResponseFactory,
+    ResultFactory,
+    TimestampFactory,
+    UserFactory,
 )
 
 # Mixins for custom client composition
@@ -74,24 +81,14 @@ from .mixins.job import JobMixin
 from .mixins.metadata import MetadataMixin
 from .mixins.search import SearchMixin
 
-# Response factories
-from .factories import (
-    ResponseFactory,
-    JobFactory,
-    IndexFactory,
-    UserFactory,
-    TimestampFactory,
-    ResultFactory,
-)
-
 # Protocols for type checking
 from .protocols import (
-    MockClientProtocol,
-    SearchMixinProtocol,
-    JobMixinProtocol,
-    MetadataMixinProtocol,
     AdminMixinProtocol,
     ExportMixinProtocol,
+    JobMixinProtocol,
+    MetadataMixinProtocol,
+    MockClientProtocol,
+    SearchMixinProtocol,
 )
 
 __all__ = [

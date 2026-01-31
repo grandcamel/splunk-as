@@ -15,9 +15,7 @@ import requests
 from assistant_skills_lib.error_handler import (
     AuthenticationError as BaseAuthenticationError,
 )
-from assistant_skills_lib.error_handler import (
-    BaseAPIError,
-)
+from assistant_skills_lib.error_handler import BaseAPIError
 from assistant_skills_lib.error_handler import NotFoundError as BaseNotFoundError
 from assistant_skills_lib.error_handler import PermissionError as BasePermissionError
 from assistant_skills_lib.error_handler import RateLimitError as BaseRateLimitError

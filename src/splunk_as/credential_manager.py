@@ -15,11 +15,8 @@ from __future__ import annotations
 import threading
 from typing import Any
 
-from assistant_skills_lib import (
-    BaseCredentialManager,
-    CredentialBackend,
-    CredentialNotFoundError as BaseCredentialNotFoundError,
-)
+from assistant_skills_lib import BaseCredentialManager, CredentialBackend
+from assistant_skills_lib import CredentialNotFoundError as BaseCredentialNotFoundError
 
 from .splunk_client import SplunkClient
 

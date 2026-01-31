@@ -227,12 +227,7 @@ def output_results(
         columns: Column names for table/csv output
         success_msg: Optional success message for text output
     """
-    from splunk_as import (
-        export_csv_string,
-        format_json,
-        format_table,
-        print_success,
-    )
+    from splunk_as import export_csv_string, format_json, format_table, print_success
 
     if output_format == "json":
         click.echo(format_json(data))

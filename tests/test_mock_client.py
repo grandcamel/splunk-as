@@ -1,35 +1,36 @@
 """Tests for the mock client system."""
 
 import os
-import pytest
 from unittest.mock import patch
 
+import pytest
+
 from splunk_as.mock import (
-    MockSplunkClient,
-    MockSplunkClientBase,
-    MockSearchClient,
-    MockJobClient,
-    MockMetadataClient,
-    MockAdminClient,
-    MockExportClient,
-    MockSearchJobClient,
-    MockSearchExportClient,
-    MockFullSearchClient,
-    is_mock_mode,
-    create_mock_client,
-    create_cloud_mock,
-    create_minimal_mock,
-    SearchMixin,
-    JobMixin,
-    MetadataMixin,
     AdminMixin,
     ExportMixin,
-    ResponseFactory,
-    JobFactory,
     IndexFactory,
-    UserFactory,
-    TimestampFactory,
+    JobFactory,
+    JobMixin,
+    MetadataMixin,
+    MockAdminClient,
+    MockExportClient,
+    MockFullSearchClient,
+    MockJobClient,
+    MockMetadataClient,
+    MockSearchClient,
+    MockSearchExportClient,
+    MockSearchJobClient,
+    MockSplunkClient,
+    MockSplunkClientBase,
+    ResponseFactory,
     ResultFactory,
+    SearchMixin,
+    TimestampFactory,
+    UserFactory,
+    create_cloud_mock,
+    create_minimal_mock,
+    create_mock_client,
+    is_mock_mode,
 )
 from splunk_as.mock.mixins.job import MockJobState
 
@@ -653,10 +654,13 @@ class TestExportMixin:
 
     def test_export_results_csv(self):
         client = MockExportClient()
-        client.set_export_data("test-sid", [
-            {"host": "server1", "count": "10"},
-            {"host": "server2", "count": "20"},
-        ])
+        client.set_export_data(
+            "test-sid",
+            [
+                {"host": "server1", "count": "10"},
+                {"host": "server2", "count": "20"},
+            ],
+        )
         chunks = list(client.export_results("test-sid", output_mode="csv"))
         data = b"".join(chunks).decode("utf-8")
         assert "host" in data

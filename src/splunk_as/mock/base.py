@@ -252,7 +252,8 @@ class MockSplunkClientBase:
         """
         matching = self.get_calls(method=method, endpoint=endpoint)
         assert len(matching) == 0, (
-            f"Expected {endpoint} to not be called, " f"was called {len(matching)} times"
+            f"Expected {endpoint} to not be called, "
+            f"was called {len(matching)} times"
         )
 
     # Core HTTP methods
@@ -341,7 +342,9 @@ class MockSplunkClientBase:
         operation: str = "POST raw request",
     ) -> bytes:
         """Mock raw POST request."""
-        self._record_call("POST_RAW", endpoint, params=params, data=data, timeout=timeout)
+        self._record_call(
+            "POST_RAW", endpoint, params=params, data=data, timeout=timeout
+        )
         response = self._get_response(endpoint, data=data, params=params)
         if isinstance(response, bytes):
             return response
@@ -356,7 +359,9 @@ class MockSplunkClientBase:
         operation: str = "POST text request",
     ) -> str:
         """Mock text POST request."""
-        self._record_call("POST_TEXT", endpoint, params=params, data=data, timeout=timeout)
+        self._record_call(
+            "POST_TEXT", endpoint, params=params, data=data, timeout=timeout
+        )
         response = self._get_response(endpoint, data=data, params=params)
         if isinstance(response, str):
             return response
@@ -433,7 +438,9 @@ class MockSplunkClientBase:
         operation: str = "upload lookup",
     ) -> Dict[str, Any]:
         """Mock lookup upload."""
-        endpoint = f"/servicesNS/{namespace}/{app}/data/lookup-table-files/{lookup_name}"
+        endpoint = (
+            f"/servicesNS/{namespace}/{app}/data/lookup-table-files/{lookup_name}"
+        )
         self._record_call(
             "UPLOAD_LOOKUP",
             endpoint,

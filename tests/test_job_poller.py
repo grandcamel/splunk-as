@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from splunk_as.error_handler import JobFailedError
 from splunk_as.job_poller import (
     JobProgress,
     JobState,
@@ -22,7 +23,6 @@ from splunk_as.job_poller import (
     unpause_job,
     wait_for_job,
 )
-from splunk_as.error_handler import JobFailedError
 
 
 class TestEncodeSid:
@@ -349,14 +349,16 @@ class TestPollJobStatus:
         mock_client = MagicMock()
         # First call: running, second call: done
         mock_client.get.side_effect = [
+            {"entry": [{"content": {"dispatchState": "RUNNING", "doneProgress": 0.5}}]},
             {
                 "entry": [
-                    {"content": {"dispatchState": "RUNNING", "doneProgress": 0.5}}
-                ]
-            },
-            {
-                "entry": [
-                    {"content": {"dispatchState": "DONE", "isDone": True, "doneProgress": 1.0}}
+                    {
+                        "content": {
+                            "dispatchState": "DONE",
+                            "isDone": True,
+                            "doneProgress": 1.0,
+                        }
+                    }
                 ]
             },
         ]
@@ -375,7 +377,13 @@ class TestPollJobStatus:
         mock_client = MagicMock()
         mock_client.get.return_value = {
             "entry": [
-                {"content": {"dispatchState": "DONE", "isDone": True, "doneProgress": 1.0}}
+                {
+                    "content": {
+                        "dispatchState": "DONE",
+                        "isDone": True,
+                        "doneProgress": 1.0,
+                    }
+                }
             ]
         }
 
@@ -397,7 +405,13 @@ class TestWaitForJob:
         mock_client = MagicMock()
         mock_client.get.return_value = {
             "entry": [
-                {"content": {"dispatchState": "DONE", "isDone": True, "doneProgress": 1.0}}
+                {
+                    "content": {
+                        "dispatchState": "DONE",
+                        "isDone": True,
+                        "doneProgress": 1.0,
+                    }
+                }
             ]
         }
 

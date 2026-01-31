@@ -7,12 +7,7 @@ from typing import Any
 
 import click
 
-from splunk_as import (
-    format_json,
-    print_success,
-    print_warning,
-    validate_path_component,
-)
+from splunk_as import format_json, print_success, print_warning, validate_path_component
 
 from ..cli_utils import get_client_from_context, handle_cli_errors, output_results
 

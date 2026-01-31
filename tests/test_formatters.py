@@ -3,8 +3,8 @@
 import pytest
 
 from splunk_as.formatters import (
-    Colors,
     SENSITIVE_FIELD_PATTERNS,
+    Colors,
     _is_sensitive_field,
     _redact_sensitive_value,
     colorize,
@@ -289,7 +289,9 @@ class TestFormatSearchResultsExtended:
     def test_output_format_csv(self):
         """Test CSV output format."""
         results = [{"host": "server1", "count": "100"}]
-        output = format_search_results(results, fields=["host", "count"], output_format="csv")
+        output = format_search_results(
+            results, fields=["host", "count"], output_format="csv"
+        )
         assert "host" in output
         assert "server1" in output
 
@@ -372,9 +374,19 @@ class TestFormatJobStatus:
 
     def test_job_states(self):
         """Test different job states are formatted."""
-        states = ["QUEUED", "PARSING", "RUNNING", "FINALIZING", "DONE", "FAILED", "PAUSED"]
+        states = [
+            "QUEUED",
+            "PARSING",
+            "RUNNING",
+            "FINALIZING",
+            "DONE",
+            "FAILED",
+            "PAUSED",
+        ]
         for state in states:
-            job = {"content": {"sid": "test", "dispatchState": state, "doneProgress": 0}}
+            job = {
+                "content": {"sid": "test", "dispatchState": state, "doneProgress": 0}
+            }
             output = format_job_status(job)
             assert state in output
 
@@ -395,7 +407,13 @@ class TestFormatJobStatus:
 
     def test_unknown_state(self):
         """Test unknown state is handled."""
-        job = {"content": {"sid": "test", "dispatchState": "UNKNOWN_STATE", "doneProgress": 0}}
+        job = {
+            "content": {
+                "sid": "test",
+                "dispatchState": "UNKNOWN_STATE",
+                "doneProgress": 0,
+            }
+        }
         output = format_job_status(job)
         assert "UNKNOWN_STATE" in output
 

@@ -6,6 +6,7 @@ This prevents type mismatch bugs where tests pass with mocks but fail with real 
 """
 
 import pytest
+
 from splunk_as.mock.factories import (
     IndexFactory,
     JobFactory,
@@ -23,27 +24,27 @@ class TestIndexFactoryTypeFidelity:
         entry = IndexFactory.index_entry("main", event_count=1000, size_mb=512)
 
         # These fields are strings in the real API
-        assert isinstance(entry["totalEventCount"], str), (
-            "totalEventCount must be string - real Splunk API returns strings"
-        )
-        assert isinstance(entry["currentDBSizeMB"], str), (
-            "currentDBSizeMB must be string - real Splunk API returns strings"
-        )
-        assert isinstance(entry["maxDataSizeMB"], str), (
-            "maxDataSizeMB must be string - real Splunk API returns strings"
-        )
+        assert isinstance(
+            entry["totalEventCount"], str
+        ), "totalEventCount must be string - real Splunk API returns strings"
+        assert isinstance(
+            entry["currentDBSizeMB"], str
+        ), "currentDBSizeMB must be string - real Splunk API returns strings"
+        assert isinstance(
+            entry["maxDataSizeMB"], str
+        ), "maxDataSizeMB must be string - real Splunk API returns strings"
 
     def test_index_entry_disabled_is_lowercase_string(self):
         """disabled field must be 'true' or 'false' string (not bool)."""
         enabled_entry = IndexFactory.index_entry("main", disabled=False)
         disabled_entry = IndexFactory.index_entry("disabled_idx", disabled=True)
 
-        assert enabled_entry["disabled"] == "false", (
-            "disabled=False should produce 'false' string"
-        )
-        assert disabled_entry["disabled"] == "true", (
-            "disabled=True should produce 'true' string"
-        )
+        assert (
+            enabled_entry["disabled"] == "false"
+        ), "disabled=False should produce 'false' string"
+        assert (
+            disabled_entry["disabled"] == "true"
+        ), "disabled=True should produce 'true' string"
 
     def test_index_entry_values_are_correct(self):
         """Verify string values match the input numbers."""
@@ -59,12 +60,12 @@ class TestIndexFactoryTypeFidelity:
 
         for entry in result["entry"]:
             content = entry["content"]
-            assert isinstance(content["totalEventCount"], str), (
-                f"Index {entry['name']}: totalEventCount must be string"
-            )
-            assert isinstance(content["currentDBSizeMB"], str), (
-                f"Index {entry['name']}: currentDBSizeMB must be string"
-            )
+            assert isinstance(
+                content["totalEventCount"], str
+            ), f"Index {entry['name']}: totalEventCount must be string"
+            assert isinstance(
+                content["currentDBSizeMB"], str
+            ), f"Index {entry['name']}: currentDBSizeMB must be string"
 
 
 class TestResultFactoryTypeFidelity:

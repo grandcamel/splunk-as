@@ -4,8 +4,9 @@ Live Search Tests
 Tests for search operations against a real Splunk instance.
 """
 
-import pytest
 import time
+
+import pytest
 
 
 @pytest.mark.live
@@ -77,10 +78,10 @@ class TestSearchResultTypes:
             row = results[0]
             # Splunk returns all values as strings
             if "count" in row:
-                assert isinstance(row["count"], str), (
-                    f"Stats count should be string, got {type(row['count'])}"
-                )
+                assert isinstance(
+                    row["count"], str
+                ), f"Stats count should be string, got {type(row['count'])}"
             if "avg" in row:
-                assert isinstance(row["avg"], str), (
-                    f"Stats avg should be string, got {type(row['avg'])}"
-                )
+                assert isinstance(
+                    row["avg"], str
+                ), f"Stats avg should be string, got {type(row['avg'])}"

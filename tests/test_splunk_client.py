@@ -518,7 +518,9 @@ class TestSplunkClientResourceManagement:
         mock_session = MagicMock()
         mock_session_class.return_value = mock_session
 
-        with SplunkClient(base_url="https://splunk.example.com", token="test") as client:
+        with SplunkClient(
+            base_url="https://splunk.example.com", token="test"
+        ) as client:
             assert client is not None
 
         mock_session.close.assert_called_once()
