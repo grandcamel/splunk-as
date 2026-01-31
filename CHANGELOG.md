@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2025-01-31
+
+### Added
+
+- **Dashboard Commands**: New `dashboard` command group for managing Splunk dashboards
+  - `dashboard list` - List all dashboards with app/owner filtering
+  - `dashboard get` - Get dashboard details (text, JSON, or XML output)
+  - `dashboard export` - Export dashboard XML to file
+  - `dashboard import` - Import dashboard from XML file
+  - `dashboard delete` - Delete a dashboard with confirmation
+- **Data Input Commands**: New `input` command group for managing data inputs
+  - `input hec list` - List HTTP Event Collector tokens
+  - `input hec create` - Create new HEC token
+  - `input hec delete` - Delete HEC token
+  - `input monitor list` - List file/directory monitors
+  - `input script list` - List scripted inputs
+  - `input summary` - Show summary of all data inputs
+- **User/Role Commands**: New `user` command group for user and role management
+  - `user list` - List all users
+  - `user get` - Get user details
+  - `user create` - Create new user
+  - `user update` - Update user properties
+  - `user delete` - Delete user
+  - `user role list` - List all roles
+  - `user role get` - Get role details
+  - `user role create` - Create new role
+  - `user role delete` - Delete role
+- **Config Commands**: New `config` command group for configuration management
+  - `config show` - Display current configuration (with sensitive value redaction)
+  - `config validate` - Validate configuration with detailed error reporting
+  - `config sources` - Show configuration file locations
+- **Shell Completion**: New `completion` command group for shell completion support
+  - `completion bash` - Generate bash completion script
+  - `completion zsh` - Generate zsh completion script
+  - `completion fish` - Generate fish completion script
+  - `completion install` - Interactive shell completion setup
+- **Tests**: Added 26 new CLI tests for dashboard, input, user, config, and completion commands
+
+### Changed
+
+- Updated `json_body` parameter type to accept both `Dict[str, Any]` and `List[Any]` for batch operations
+
 ## [1.1.5] - 2025-01-31
 
 ### Added

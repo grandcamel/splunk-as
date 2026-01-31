@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, cast
+from typing import Any, Callable, Dict, Generator, Iterator, List, Optional, Union, cast
 
 
 def is_mock_mode() -> bool:
@@ -276,7 +276,7 @@ class MockSplunkClientBase:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
-        json_body: Optional[Dict[str, Any]] = None,
+        json_body: Optional[Union[Dict[str, Any], List[Any]]] = None,
         timeout: Optional[int] = None,
         operation: str = "POST request",
     ) -> Dict[str, Any]:

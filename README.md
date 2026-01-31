@@ -107,6 +107,37 @@ splunk-as app install ./app.spl --update --name custom_name
 splunk-as metrics list --index my_metrics
 splunk-as metrics mstats cpu.percent --index my_metrics --span 5m
 splunk-as metrics mpreview cpu.percent --index my_metrics --count 50
+
+# Dashboard management
+splunk-as dashboard list --app search
+splunk-as dashboard get my_dashboard --output xml
+splunk-as dashboard export my_dashboard -o dashboard.xml
+splunk-as dashboard import dashboard.xml --app search
+splunk-as dashboard delete my_dashboard --force
+
+# Data input management
+splunk-as input hec list
+splunk-as input hec create my_token --index main --sourcetype json
+splunk-as input monitor list
+splunk-as input script list
+splunk-as input summary
+
+# User and role management
+splunk-as user list
+splunk-as user get admin
+splunk-as user create newuser -p password123 -r user
+splunk-as user role list
+splunk-as user role get admin
+
+# Configuration
+splunk-as config show
+splunk-as config validate --verbose
+splunk-as config sources
+
+# Shell completion
+splunk-as completion bash >> ~/.bashrc
+splunk-as completion zsh >> ~/.zshrc
+splunk-as completion install
 ```
 
 ### Available Command Groups
@@ -126,6 +157,11 @@ splunk-as metrics mpreview cpu.percent --index my_metrics --count 50
 | `admin` | Server administration and REST API |
 | `tag` | Knowledge object tagging |
 | `metrics` | Real-time metrics operations |
+| `dashboard` | Dashboard import/export and management |
+| `input` | Data input management (HEC, monitors, scripts) |
+| `user` | User and role management |
+| `config` | Configuration management and validation |
+| `completion` | Shell completion for bash/zsh/fish |
 
 ## Features
 

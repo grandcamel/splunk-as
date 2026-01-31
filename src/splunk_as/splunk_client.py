@@ -156,7 +156,7 @@ class SplunkClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Dict[str, Any]] = None,
-        json_body: Optional[Dict[str, Any]] = None,
+        json_body: Optional[Union[Dict[str, Any], List[Any]]] = None,
         timeout: Optional[int] = None,
         stream: bool = False,
         operation: str = "API request",
@@ -269,7 +269,7 @@ class SplunkClient:
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
-        json_body: Optional[Dict[str, Any]] = None,
+        json_body: Optional[Union[Dict[str, Any], List[Any]]] = None,
         timeout: Optional[int] = None,
         operation: str = "POST request",
     ) -> Dict[str, Any]:

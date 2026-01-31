@@ -17,6 +17,7 @@ from typing import (
     List,
     Optional,
     Protocol,
+    Union,
     runtime_checkable,
 )
 
@@ -67,7 +68,7 @@ class MockClientProtocol(Protocol):
         endpoint: str,
         data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
-        json_body: Optional[Dict[str, Any]] = None,
+        json_body: Optional[Union[Dict[str, Any], List[Any]]] = None,
         timeout: Optional[int] = None,
         operation: str = "POST request",
     ) -> Dict[str, Any]:

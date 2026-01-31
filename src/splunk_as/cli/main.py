@@ -48,7 +48,10 @@ def register_commands() -> None:
     from .commands.admin_cmds import admin
     from .commands.alert_cmds import alert
     from .commands.app_cmds import app
+    from .commands.config_cmds import completion, config
+    from .commands.dashboard_cmds import dashboard
     from .commands.export_cmds import export
+    from .commands.input_cmds import input
     from .commands.job_cmds import job
     from .commands.kvstore_cmds import kvstore
     from .commands.lookup_cmds import lookup
@@ -58,6 +61,7 @@ def register_commands() -> None:
     from .commands.search_cmds import search
     from .commands.security_cmds import security
     from .commands.tag_cmds import tag
+    from .commands.user_cmds import user
 
     cli.add_command(search)
     cli.add_command(job)
@@ -72,6 +76,11 @@ def register_commands() -> None:
     cli.add_command(admin)
     cli.add_command(tag)
     cli.add_command(metrics)
+    cli.add_command(dashboard)
+    cli.add_command(input)
+    cli.add_command(user)
+    cli.add_command(config)
+    cli.add_command(completion)
 
 
 # Register commands when module is loaded

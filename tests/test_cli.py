@@ -920,3 +920,370 @@ class TestLookupTransformsCommand:
 
         assert result.exit_code == 0
         mock_client.get.assert_called_once()
+
+
+class TestDashboardCommands:
+    """Tests for dashboard commands."""
+
+    def test_dashboard_help(self, runner):
+        """Test dashboard --help."""
+        result = runner.invoke(cli, ["dashboard", "--help"])
+        assert result.exit_code == 0
+        assert "Dashboard management" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_dashboard_list(self, mock_get_client, runner, mock_client):
+        """Test dashboard list command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "my_dashboard",
+                    "acl": {"app": "search"},
+                    "content": {
+                        "label": "My Dashboard",
+                        "isDashboard": True,
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["dashboard", "list"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_dashboard_get(self, mock_get_client, runner, mock_client):
+        """Test dashboard get command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "my_dashboard",
+                    "acl": {"app": "search", "owner": "admin"},
+                    "content": {
+                        "label": "My Dashboard",
+                        "isDashboard": True,
+                        "eai:data": "<dashboard><label>My Dashboard</label></dashboard>",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["dashboard", "get", "my_dashboard"])
+
+        assert result.exit_code == 0
+        assert "my_dashboard" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_dashboard_export(self, mock_get_client, runner, mock_client, tmp_path):
+        """Test dashboard export command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "my_dashboard",
+                    "content": {
+                        "eai:data": "<dashboard><label>Test</label></dashboard>",
+                    },
+                }
+            ]
+        }
+
+        output_file = tmp_path / "dashboard.xml"
+        result = runner.invoke(
+            cli, ["dashboard", "export", "my_dashboard", "-o", str(output_file)]
+        )
+
+        assert result.exit_code == 0
+        assert output_file.exists()
+        assert "Exported" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_dashboard_delete_requires_confirmation(
+        self, mock_get_client, runner, mock_client
+    ):
+        """Test dashboard delete requires confirmation without --force."""
+        result = runner.invoke(
+            cli, ["dashboard", "delete", "my_dashboard"], input="n\n"
+        )
+        assert "Cancelled" in result.output
+
+
+class TestInputCommands:
+    """Tests for data input commands."""
+
+    def test_input_help(self, runner):
+        """Test input --help."""
+        result = runner.invoke(cli, ["input", "--help"])
+        assert result.exit_code == 0
+        assert "Data input management" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_input_hec_list(self, mock_get_client, runner, mock_client):
+        """Test input hec list command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "my_token",
+                    "content": {
+                        "disabled": False,
+                        "index": "main",
+                        "sourcetype": "json",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["input", "hec", "list"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_input_hec_create(self, mock_get_client, runner, mock_client):
+        """Test input hec create command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {
+            "entry": [
+                {
+                    "name": "new_token",
+                    "content": {
+                        "token": "abc123-token-value",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(
+            cli, ["input", "hec", "create", "new_token", "--index", "main"]
+        )
+
+        assert result.exit_code == 0
+        assert "Created" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_input_monitor_list(self, mock_get_client, runner, mock_client):
+        """Test input monitor list command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "/var/log/messages",
+                    "content": {
+                        "disabled": False,
+                        "index": "main",
+                        "sourcetype": "syslog",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["input", "monitor", "list"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_input_summary(self, mock_get_client, runner, mock_client):
+        """Test input summary command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {"entry": [{"name": "test"}]}
+
+        result = runner.invoke(cli, ["input", "summary"])
+
+        assert result.exit_code == 0
+        assert "Summary" in result.output
+
+
+class TestUserCommands:
+    """Tests for user and role commands."""
+
+    def test_user_help(self, runner):
+        """Test user --help."""
+        result = runner.invoke(cli, ["user", "--help"])
+        assert result.exit_code == 0
+        assert "User and role management" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_user_list(self, mock_get_client, runner, mock_client):
+        """Test user list command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "admin",
+                    "content": {
+                        "realname": "Admin User",
+                        "email": "admin@example.com",
+                        "roles": ["admin", "power"],
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["user", "list"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_user_get(self, mock_get_client, runner, mock_client):
+        """Test user get command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "admin",
+                    "content": {
+                        "realname": "Admin User",
+                        "email": "admin@example.com",
+                        "roles": ["admin"],
+                        "defaultApp": "search",
+                        "type": "Splunk",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["user", "get", "admin"])
+
+        assert result.exit_code == 0
+        assert "admin" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_user_create(self, mock_get_client, runner, mock_client):
+        """Test user create command."""
+        mock_get_client.return_value = mock_client
+        mock_client.post.return_value = {}
+
+        result = runner.invoke(
+            cli, ["user", "create", "newuser", "-p", "password123", "-r", "user"]
+        )
+
+        assert result.exit_code == 0
+        assert "Created" in result.output
+
+    def test_user_delete_requires_confirmation(self, runner):
+        """Test user delete requires confirmation without --force."""
+        result = runner.invoke(cli, ["user", "delete", "testuser"], input="n\n")
+        assert "Cancelled" in result.output
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_role_list(self, mock_get_client, runner, mock_client):
+        """Test user role list command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "admin",
+                    "content": {
+                        "imported_roles": ["power", "user"],
+                        "defaultApp": "launcher",
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["user", "role", "list"])
+
+        assert result.exit_code == 0
+        mock_client.get.assert_called_once()
+
+    @patch("splunk_as.cli.cli_utils.get_splunk_client")
+    def test_role_get(self, mock_get_client, runner, mock_client):
+        """Test user role get command."""
+        mock_get_client.return_value = mock_client
+        mock_client.get.return_value = {
+            "entry": [
+                {
+                    "name": "admin",
+                    "content": {
+                        "defaultApp": "launcher",
+                        "imported_roles": ["power"],
+                        "capabilities": ["admin_all_objects", "change_own_password"],
+                    },
+                }
+            ]
+        }
+
+        result = runner.invoke(cli, ["user", "role", "get", "admin"])
+
+        assert result.exit_code == 0
+        assert "admin" in result.output
+
+
+class TestConfigCommands:
+    """Tests for config commands."""
+
+    def test_config_help(self, runner):
+        """Test config --help."""
+        result = runner.invoke(cli, ["config", "--help"])
+        assert result.exit_code == 0
+        assert "Configuration management" in result.output
+
+    def test_config_show(self, runner):
+        """Test config show command."""
+        result = runner.invoke(cli, ["config", "show"])
+
+        assert result.exit_code == 0
+        assert "Configuration" in result.output
+
+    def test_config_show_json(self, runner):
+        """Test config show --output json."""
+        result = runner.invoke(cli, ["config", "show", "-o", "json"])
+
+        assert result.exit_code == 0
+        # Should be valid JSON
+        assert "{" in result.output
+
+    def test_config_sources(self, runner):
+        """Test config sources command."""
+        result = runner.invoke(cli, ["config", "sources"])
+
+        assert result.exit_code == 0
+        assert "Configuration Sources" in result.output
+        assert "Environment Variables" in result.output
+
+
+class TestCompletionCommands:
+    """Tests for shell completion commands."""
+
+    def test_completion_help(self, runner):
+        """Test completion --help."""
+        result = runner.invoke(cli, ["completion", "--help"])
+        assert result.exit_code == 0
+        assert "Shell completion support" in result.output
+
+    def test_completion_bash(self, runner):
+        """Test completion bash command."""
+        result = runner.invoke(cli, ["completion", "bash"])
+
+        assert result.exit_code == 0
+        assert "_SPLUNK_AS_COMPLETE" in result.output
+        assert "bash_source" in result.output
+
+    def test_completion_zsh(self, runner):
+        """Test completion zsh command."""
+        result = runner.invoke(cli, ["completion", "zsh"])
+
+        assert result.exit_code == 0
+        assert "_SPLUNK_AS_COMPLETE" in result.output
+        assert "zsh_source" in result.output
+
+    def test_completion_fish(self, runner):
+        """Test completion fish command."""
+        result = runner.invoke(cli, ["completion", "fish"])
+
+        assert result.exit_code == 0
+        assert "_SPLUNK_AS_COMPLETE" in result.output
+        assert "fish_source" in result.output
+
+    def test_completion_install(self, runner):
+        """Test completion install command."""
+        result = runner.invoke(cli, ["completion", "install"])
+
+        assert result.exit_code == 0
+        assert "Detected shell" in result.output
