@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import click
 
-from splunk_as import (
-    format_json,
-    print_success,
-    validate_path_component,
-)
+from splunk_as import format_json, print_success, validate_path_component
 
 from ..cli_utils import (
     build_endpoint,
@@ -46,12 +42,15 @@ def list_alerts(ctx: click.Context, app: str | None, output: str) -> None:
     """
     client = get_client_from_context(ctx)
     endpoint = build_endpoint("/saved/searches", app=app)
+    # Note: Splunk REST API doesn't support SPL-style filtering in search param
+    # We fetch all saved searches and filter client-side for alerts
     response = client.get(
         endpoint,
-        params={"search": "is_scheduled=1 AND alert.track=1"},
+        params={"count": -1},  # Get all saved searches
         operation="list alerts",
     )
 
+    # Filter for alerts (scheduled searches with alert tracking enabled)
     alerts = [
         {
             "name": entry.get("name"),
@@ -60,6 +59,8 @@ def list_alerts(ctx: click.Context, app: str | None, output: str) -> None:
             "alert_type": entry.get("content", {}).get("alert_type", ""),
         }
         for entry in response.get("entry", [])
+        if entry.get("content", {}).get("is_scheduled")
+        and entry.get("content", {}).get("alert.track")
     ]
     output_results(alerts, output, success_msg=f"Found {len(alerts)} alerts")
 
@@ -214,6 +215,7 @@ def create(
         "cron_schedule": cron,
         "is_scheduled": True,
         "alert.track": True,
+        "alert.suppress": 0,  # Required to distinguish alert from report
         "alert_type": condition,
         "alert_threshold": threshold,
     }
