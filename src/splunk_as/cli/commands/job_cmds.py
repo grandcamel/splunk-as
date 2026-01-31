@@ -17,6 +17,7 @@ from splunk_as import (
     pause_job,
     print_success,
     set_job_ttl,
+    touch_job,
     unpause_job,
     validate_spl,
     wait_for_job,
@@ -345,3 +346,18 @@ def ttl(ctx: click.Context, sid: str, ttl_value: int) -> None:
     client = get_client_from_context(ctx)
     set_job_ttl(client, sid, ttl=ttl_value)
     print_success(f"Job TTL set to {ttl_value}s: {sid}")
+
+
+@job.command()
+@click.argument("sid", callback=validate_sid_callback)
+@click.pass_context
+@handle_cli_errors
+def touch(ctx: click.Context, sid: str) -> None:
+    """Touch a job to extend its TTL.
+
+    Example:
+        splunk-as job touch 1703779200.12345
+    """
+    client = get_client_from_context(ctx)
+    touch_job(client, sid)
+    print_success(f"Job TTL extended: {sid}")
