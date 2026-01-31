@@ -23,7 +23,25 @@ from ..cli_utils import (
 )
 
 # Valid aggregation functions for mstats
-VALID_AGG_FUNCTIONS = frozenset({"avg", "sum", "min", "max", "count"})
+# Includes standard aggregations plus percentile variants
+VALID_AGG_FUNCTIONS = frozenset(
+    {
+        "avg",
+        "sum",
+        "min",
+        "max",
+        "count",
+        "stdev",
+        "median",
+        "range",
+        "var",
+        "rate",
+        "earliest",
+        "latest",
+        "values",
+        "dc",
+    }
+)
 
 # Valid span format pattern (e.g., 1m, 5m, 1h, 30s)
 SPAN_PATTERN = re.compile(r"^\d+[smhd]$")
@@ -170,11 +188,16 @@ def indexes(ctx: click.Context, output: str) -> None:
         "/data/indexes", params={"datatype": "metric"}, operation="list metrics indexes"
     )
 
+    # Explicitly convert numeric fields that may be returned as strings
     indexes_list = [
         {
             "name": entry.get("name"),
-            "totalEventCount": entry.get("content", {}).get("totalEventCount", 0),
-            "currentDBSizeMB": entry.get("content", {}).get("currentDBSizeMB", 0),
+            "totalEventCount": int(
+                entry.get("content", {}).get("totalEventCount", 0) or 0
+            ),
+            "currentDBSizeMB": float(
+                entry.get("content", {}).get("currentDBSizeMB", 0) or 0
+            ),
         }
         for entry in response.get("entry", [])
         if entry.get("content", {}).get("datatype") == "metric"
@@ -192,7 +215,7 @@ def indexes(ctx: click.Context, output: str) -> None:
 @click.option("--span", default="1m", help="Time span for aggregation.")
 @click.option(
     "--agg",
-    type=click.Choice(["avg", "sum", "min", "max", "count"]),
+    type=click.Choice(["avg", "sum", "min", "max", "count", "stdev", "median", "rate"]),
     default="avg",
     help="Aggregation function.",
 )
