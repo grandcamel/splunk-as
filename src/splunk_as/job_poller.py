@@ -442,7 +442,7 @@ def list_jobs(
         List of job information dictionaries
     """
     response = client.get(
-        "/search/jobs",
+        "/search/v2/jobs",
         params={"count": count, "offset": offset},
         operation="list jobs",
     )
@@ -468,7 +468,7 @@ def delete_job(client: "SplunkClient", sid: str) -> bool:
         True if deletion was successful
     """
     client.delete(
-        f"/search/jobs/{_encode_sid(sid)}",
+        f"/search/v2/jobs/{_encode_sid(sid)}",
         operation=f"delete job {sid}",
     )
     return True
