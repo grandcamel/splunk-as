@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-02
+
+### Changed
+
+- **BREAKING: Splunk 10.x API Migration**: Migrated all Search API calls from v1 to v2 endpoints
+  - `/search/jobs/oneshot` → `/search/v2/jobs/oneshot`
+  - `/search/jobs/export` → `/search/v2/jobs/export`
+  - This change is required for Splunk 10.x compatibility where v1 GET requests are disabled by default
+  - If using Splunk 9.x or earlier, v2 endpoints are also supported and this change is backward-compatible
+
+### Fixed
+
+- Fixed "Unknown search command 'index'" errors on Splunk 10.x caused by v1 API restrictions
+
 ## [1.1.6] - 2025-01-31
 
 ### Added
@@ -85,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Export Commands**: New `export stream` command for direct streaming exports
-  - Uses `/search/jobs/export` endpoint for efficient streaming
+  - Uses `/search/v2/jobs/export` endpoint for efficient streaming
   - Results stream as they become available without creating persistent jobs
   - Best for large exports where job access isn't needed later
 - **Export Commands**: Added `json_rows` output format to all export commands

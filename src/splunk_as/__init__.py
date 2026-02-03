@@ -18,7 +18,7 @@ Example usage:
     @handle_errors
     def main():
         client = get_splunk_client()
-        results = client.post('/search/jobs/oneshot', data={'search': 'index=main | head 10'})
+        results = client.post('/search/v2/jobs/oneshot', data={'search': 'index=main | head 10'})
         print(results)
 
 For testing:

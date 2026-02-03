@@ -29,7 +29,7 @@ def main():
     # Validate and execute a search
     spl = validate_spl("index=main | head 10")
     results = client.post(
-        '/search/jobs/oneshot',
+        '/search/v2/jobs/oneshot',
         data={'search': spl, 'output_mode': 'json'}
     )
     print(results)

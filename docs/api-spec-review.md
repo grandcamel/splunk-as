@@ -1,8 +1,8 @@
 # Splunk REST API Specification Review
 
-**Review Date**: 2026-01-31
-**Package Version**: 1.1.6
-**Splunk Enterprise Target**: 9.x / Splunk Cloud
+**Review Date**: 2026-02-02
+**Package Version**: 1.2.0
+**Splunk Enterprise Target**: 9.x / 10.x / Splunk Cloud
 
 ## Executive Summary
 
@@ -14,10 +14,10 @@ This document provides a comprehensive review of the `splunk-as` CLI tool's REST
 |--------|-------|
 | Components Reviewed | 16 |
 | Total Endpoints Used | 45+ |
-| Correct Implementations | 43 |
-| Minor Discrepancies | 3 |
+| Correct Implementations | 44 |
+| Minor Discrepancies | 2 |
 | Critical Issues | 0 |
-| Recommendations | 8 |
+| Recommendations | 7 |
 
 ### Overall Assessment: **EXCELLENT**
 
@@ -36,7 +36,7 @@ The implementation demonstrates strong alignment with Splunk REST API specificat
 
 | Command | Endpoint | Method | Compliance |
 |---------|----------|--------|------------|
-| oneshot | `/search/jobs/oneshot` | POST | ✅ Correct |
+| oneshot | `/search/v2/jobs/oneshot` | POST | ✅ Correct |
 | normal | `/search/v2/jobs` | POST | ✅ Correct |
 | blocking | `/search/v2/jobs` | POST | ✅ Correct |
 | results | `/search/v2/jobs/{sid}/results` | GET | ✅ Correct |
@@ -44,9 +44,9 @@ The implementation demonstrates strong alignment with Splunk REST API specificat
 
 #### Findings
 
-1. **Correct v2 API Usage**: The implementation correctly uses `/search/v2/jobs` for job creation (lines 141-150, 207-217), following Splunk's recommendation to migrate from legacy v1 endpoints.
+1. **Correct v2 API Usage**: The implementation correctly uses `/search/v2/jobs` for job creation and `/search/v2/jobs/oneshot` for oneshot searches, following Splunk 10.x requirements where v1 GET requests are disabled by default.
 
-2. **Oneshot Search**: Uses legacy `/search/jobs/oneshot` endpoint (line 88), which is acceptable as the v2 oneshot endpoint isn't documented separately.
+2. **Splunk 10.x Compatibility**: All search API calls now use v2 endpoints to ensure compatibility with Splunk 10.x which blocks v1 API GET requests by default (`v1APIBlockGETSearchLaunch = true`).
 
 3. **SID URL Encoding**: Properly URL-encodes SID using `quote(sid, safe='')` (lines 157, 221, 324, 353) preventing URL path injection.
 
@@ -109,12 +109,12 @@ The implementation demonstrates strong alignment with Splunk REST API specificat
 |---------|----------|--------|------------|
 | results | `/search/v2/jobs/{sid}/results` | GET (stream) | ✅ Correct |
 | job | `/search/v2/jobs/{sid}/results` | GET (stream) | ✅ Correct |
-| stream | `/search/jobs/export` | GET (stream) | ✅ Correct |
-| estimate | `/search/jobs/oneshot` | POST | ✅ Correct |
+| stream | `/search/v2/jobs/export` | GET (stream) | ✅ Correct |
+| estimate | `/search/v2/jobs/oneshot` | POST | ✅ Correct |
 
 #### Findings
 
-1. **Streaming Export**: Correctly uses `/search/jobs/export` for direct streaming without job creation (line 300). This endpoint is documented to stream results as they become available.
+1. **Streaming Export**: Correctly uses `/search/v2/jobs/export` for direct streaming without job creation (line 300). This endpoint is documented to stream results as they become available.
 
 2. **Output Formats**: Supports csv, json, json_rows, xml - all valid `output_mode` values per Splunk docs.
 
@@ -199,8 +199,8 @@ The implementation demonstrates strong alignment with Splunk REST API specificat
 |---------|----------|--------|------------|
 | indexes | `/data/indexes` | GET | ✅ Correct |
 | index-info | `/data/indexes/{name}` | GET | ✅ Correct |
-| search | `/search/jobs/oneshot` (metadata search) | POST | ✅ Correct |
-| fields | `/search/jobs/oneshot` (fieldsummary) | POST | ✅ Correct |
+| search | `/search/v2/jobs/oneshot` (metadata search) | POST | ✅ Correct |
+| fields | `/search/v2/jobs/oneshot` (fieldsummary) | POST | ✅ Correct |
 
 #### Findings
 
@@ -228,9 +228,9 @@ The implementation demonstrates strong alignment with Splunk REST API specificat
 | Command | Endpoint | Method | Compliance |
 |---------|----------|--------|------------|
 | list | `/data/lookup-table-files` | GET | ✅ Correct |
-| get | `/search/jobs/oneshot` (inputlookup) | POST | ✅ Correct |
-| download | `/search/jobs/oneshot` (inputlookup) | POST | ✅ Correct |
-| upload | `/search/jobs/oneshot` (outputlookup) | POST | ✅ Correct |
+| get | `/search/v2/jobs/oneshot` (inputlookup) | POST | ✅ Correct |
+| download | `/search/v2/jobs/oneshot` (inputlookup) | POST | ✅ Correct |
+| upload | `/search/v2/jobs/oneshot` (outputlookup) | POST | ✅ Correct |
 | delete | `/servicesNS/-/{app}/data/lookup-table-files/{name}` | DELETE | ✅ Correct |
 | transforms | `/data/transforms/lookups` | GET | ✅ Correct |
 
@@ -442,10 +442,10 @@ HEC enable/disable operations use a different endpoint pattern (`/data/inputs/ht
 
 | Command | Endpoint | Method | Compliance |
 |---------|----------|--------|------------|
-| list | `/search/jobs/oneshot` (rest command) | POST | ✅ Correct |
+| list | `/search/v2/jobs/oneshot` (rest command) | POST | ✅ Correct |
 | add | `/servicesNS/nobody/{app}/configs/conf-tags` | POST | ✅ Correct |
 | remove | `/servicesNS/nobody/{app}/configs/conf-tags/{stanza}` | POST | ✅ Correct |
-| search | `/search/jobs/oneshot` | POST | ✅ Correct |
+| search | `/search/v2/jobs/oneshot` | POST | ✅ Correct |
 
 #### Findings
 
@@ -491,11 +491,11 @@ HEC enable/disable operations use a different endpoint pattern (`/data/inputs/ht
 
 | Command | Endpoint | Method | Compliance |
 |---------|----------|--------|------------|
-| list | `/search/jobs/oneshot` (mcatalog) | POST | ✅ Correct |
+| list | `/search/v2/jobs/oneshot` (mcatalog) | POST | ✅ Correct |
 | indexes | `/data/indexes` (datatype=metric) | GET | ✅ Correct |
-| mstats | `/search/jobs/oneshot` (mstats) | POST | ✅ Correct |
-| mcatalog | `/search/jobs/oneshot` (mcatalog) | POST | ✅ Correct |
-| mpreview | `/search/jobs/oneshot` (mpreview) | POST | ✅ Correct |
+| mstats | `/search/v2/jobs/oneshot` (mstats) | POST | ✅ Correct |
+| mcatalog | `/search/v2/jobs/oneshot` (mcatalog) | POST | ✅ Correct |
+| mpreview | `/search/v2/jobs/oneshot` (mpreview) | POST | ✅ Correct |
 
 #### Findings
 
@@ -540,21 +540,14 @@ HEC enable/disable operations use a different endpoint pattern (`/data/inputs/ht
 
 ### Minor Discrepancies (Non-Critical)
 
-#### 1. Oneshot Endpoint Version
-
-**Location**: `search_cmds.py:88`
-**Finding**: Uses `/search/jobs/oneshot` instead of `/search/v2/jobs/oneshot`
-**Impact**: Low - Legacy endpoint still works
-**Recommendation**: Consider updating to v2 for consistency, though current implementation is functional.
-
-#### 2. Missing `namespace` Parameter in Job Create
+#### 1. Missing `namespace` Parameter in Job Create
 
 **Location**: `job_cmds.py:89`
 **Finding**: Uses `namespace` parameter in form data, but Splunk uses `app` for namespace context
 **Impact**: Low - Currently works but may not have intended effect
 **Recommendation**: Verify the `namespace` parameter behavior or use `/servicesNS/{owner}/{app}/search/v2/jobs` pattern instead.
 
-#### 3. HEC Token Namespace
+#### 2. HEC Token Namespace
 
 **Location**: `input_cmds.py:121`
 **Finding**: Hardcodes `splunk_httpinput` app which is correct but may differ in some deployments
@@ -563,21 +556,19 @@ HEC enable/disable operations use a different endpoint pattern (`/data/inputs/ht
 
 ### Recommendations for Enhancement
 
-1. **Add Search Job v2 Oneshot**: Update oneshot to use `/search/v2/jobs` with `exec_mode=oneshot` for full v2 API consistency.
+1. **Add `status_buckets` Parameter**: For searches requiring timeline data, expose the `status_buckets` parameter (default 0).
 
-2. **Add `status_buckets` Parameter**: For searches requiring timeline data, expose the `status_buckets` parameter (default 0).
+2. **Add `rf` Parameter**: For guaranteed field extraction, expose the `rf` (required fields) parameter.
 
-3. **Add `rf` Parameter**: For guaranteed field extraction, expose the `rf` (required fields) parameter.
+3. **Add HEC Enable/Disable**: Implement global HEC enable/disable via `/data/inputs/http/http/enable` and `/disable`.
 
-4. **Add HEC Enable/Disable**: Implement global HEC enable/disable via `/data/inputs/http/http/enable` and `/disable`.
+4. **Add Lookup File Upload**: Consider adding direct file upload to `/data/lookup-table-files` as alternative to SPL-based upload.
 
-5. **Add Lookup File Upload**: Consider adding direct file upload to `/data/lookup-table-files` as alternative to SPL-based upload.
+5. **Add Search Preview Streaming**: Implement streaming results_preview for long-running searches.
 
-6. **Add Search Preview Streaming**: Implement streaming results_preview for long-running searches.
+6. **Add More Job Control Actions**: Consider exposing `setpriority`, `enablepreview` actions.
 
-7. **Add More Job Control Actions**: Consider exposing `setpriority`, `enablepreview` actions.
-
-8. **Add Parallel Search Context**: For searches requiring `search_context`, add app/owner context parameter support.
+7. **Add Parallel Search Context**: For searches requiring `search_context`, add app/owner context parameter support.
 
 ---
 
