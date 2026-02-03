@@ -227,7 +227,7 @@ class TestExportSizeEstimation:
     def test_estimate_from_stats(self, splunk_client, test_index, test_data):
         """Test estimating export size using stats."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f"search index={test_index} | stats count",
                 "output_mode": "json",

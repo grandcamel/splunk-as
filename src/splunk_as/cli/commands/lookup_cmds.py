@@ -101,7 +101,7 @@ def get(
     # Use inputlookup to get contents (quote name for defense-in-depth)
     search = f'| inputlookup "{safe_lookup_name}" | head {validated_count}'
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": search,
             "namespace": app,
@@ -148,7 +148,7 @@ def download(
     # Stream lookup contents using export endpoint (quote name for defense-in-depth)
     search = f'| inputlookup "{safe_lookup_name}"'
     content = client.post_raw(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": search,
             "namespace": app,

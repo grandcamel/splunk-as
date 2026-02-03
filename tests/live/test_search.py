@@ -24,7 +24,7 @@ class TestSearchOneshot:
     def test_oneshot_simple_search(self, splunk_client, test_index, test_data):
         """Test basic oneshot search returns results."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f"search index={test_index} | head 10",
                 "output_mode": "json",
@@ -41,7 +41,7 @@ class TestSearchOneshot:
     def test_oneshot_stats_search(self, splunk_client, test_index, test_data):
         """Test oneshot search with stats command."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f"search index={test_index} | stats count by sourcetype",
                 "output_mode": "json",
@@ -60,7 +60,7 @@ class TestSearchOneshot:
     def test_oneshot_timechart(self, splunk_client, test_index, test_data):
         """Test oneshot search with timechart command."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f"search index={test_index} | timechart span=1h count",
                 "output_mode": "json",
@@ -78,7 +78,7 @@ class TestSearchOneshot:
     def test_oneshot_empty_results(self, splunk_client, test_index):
         """Test oneshot search with no matching events."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f'search index={test_index} nonexistent_field="impossible_value"',
                 "output_mode": "json",
@@ -235,7 +235,7 @@ class TestSearchValidation:
         """Test that invalid SPL returns appropriate error."""
         with pytest.raises(Exception) as exc_info:
             splunk_client.post(
-                "/search/jobs/oneshot",
+                "/search/v2/jobs/oneshot",
                 data={
                     "search": "invalid || spl syntax [[",
                     "output_mode": "json",
@@ -250,7 +250,7 @@ class TestSearchValidation:
     def test_generating_command_search(self, splunk_client):
         """Test search starting with generating command."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| makeresults count=5 | eval test=1",
                 "output_mode": "json",
@@ -270,7 +270,7 @@ class TestSearchPerformance:
     def test_search_with_many_results(self, splunk_client, test_index, test_data):
         """Test search returning many results."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f"search index={test_index} | head 1000",
                 "output_mode": "json",

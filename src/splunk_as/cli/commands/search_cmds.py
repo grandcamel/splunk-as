@@ -86,7 +86,7 @@ def oneshot(
     client = get_client_from_context(ctx)
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": search_spl,
             "earliest_time": earliest,

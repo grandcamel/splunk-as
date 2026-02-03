@@ -142,7 +142,7 @@ class TestSplunkClientRequests:
             token="test-token",
         )
         result = client.post_raw(
-            "/search/jobs/export",
+            "/search/v2/jobs/export",
             data={"search": "| makeresults"},
             params={"output_mode": "csv"},
         )
@@ -165,7 +165,7 @@ class TestSplunkClientRequests:
             token="test-token",
         )
         result = client.post_text(
-            "/search/jobs/export",
+            "/search/v2/jobs/export",
             data={"search": "| makeresults"},
             params={"output_mode": "csv"},
         )
@@ -338,7 +338,7 @@ class TestUploadLookup:
 
         call_args = mock_session.request.call_args
         # The URL should be the oneshot search endpoint
-        assert "/servicesNS/admin/my_app/search/jobs/oneshot" in call_args[1]["url"]
+        assert "/servicesNS/admin/my_app/search/v2/jobs/oneshot" in call_args[1]["url"]
 
     @patch("splunk_as.splunk_client.requests.Session")
     def test_upload_lookup_accepts_bytes_content(self, mock_session_class):

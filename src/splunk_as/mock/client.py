@@ -34,7 +34,7 @@ class MockSplunkClient(  # type: ignore[misc]
         >>> result = client.oneshot_search("index=main | head 10")
         >>> assert len(result["results"]) > 0
         >>> # Verify API calls
-        >>> client.assert_called("POST", "/search/jobs/oneshot")
+        >>> client.assert_called("POST", "/search/v2/jobs/oneshot")
 
     For partial mocking, create a custom class with specific mixins:
         >>> class SearchOnlyMock(SearchMixin, MockSplunkClientBase):

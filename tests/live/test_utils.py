@@ -105,7 +105,7 @@ def generate_test_events(
         # Execute the search to generate events
         client = connection.get_client()
         client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": spl,
                 "output_mode": "json",
@@ -156,7 +156,7 @@ def generate_simple_events(
     try:
         client = connection.get_client()
         client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={"search": spl, "output_mode": "json"},
             timeout=60,
             operation="generate simple events",
@@ -226,7 +226,7 @@ def wait_for_indexing(
 
             # Fallback: use search to count events
             response = client.post(
-                "/search/jobs/oneshot",
+                "/search/v2/jobs/oneshot",
                 data={
                     "search": f"search index={index} | stats count",
                     "output_mode": "json",
@@ -278,7 +278,7 @@ def cleanup_test_data(
             # Just delete the events (requires admin access and delete enabled)
             client = connection.get_client()
             client.post(
-                "/search/jobs/oneshot",
+                "/search/v2/jobs/oneshot",
                 data={
                     "search": f"search index={index} | delete",
                     "output_mode": "json",

@@ -61,7 +61,7 @@ class TestLookupSearch:
 
         # Search using the lookup
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": f"| inputlookup {test_lookup_name}",
                 "output_mode": "json",
@@ -153,7 +153,7 @@ class TestLookupInputSearch:
         """Test inputlookup with nonexistent file returns error or empty."""
         try:
             response = splunk_client.post(
-                "/search/jobs/oneshot",
+                "/search/v2/jobs/oneshot",
                 data={
                     "search": "| inputlookup nonexistent_lookup_12345.csv",
                     "output_mode": "json",
@@ -171,7 +171,7 @@ class TestLookupInputSearch:
     def test_makeresults_with_outputlookup_syntax(self, splunk_client):
         """Test outputlookup syntax validation."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| makeresults count=1 | eval test=1",
                 "output_mode": "json",

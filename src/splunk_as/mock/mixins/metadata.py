@@ -307,7 +307,7 @@ class MetadataMixin:
         """
         self._record_call(
             "POST",
-            "/services/search/jobs/oneshot",
+            "/services/search/v2/jobs/oneshot",
             data={
                 "search": f"index={index} | fieldsummary",
                 "earliest_time": earliest,
@@ -388,7 +388,7 @@ class MetadataMixin:
 
         self._record_call(
             "POST",
-            "/services/search/jobs/oneshot",
+            "/services/search/v2/jobs/oneshot",
             data={"search": spl},
         )
 

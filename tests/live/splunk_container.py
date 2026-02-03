@@ -341,7 +341,7 @@ class SplunkContainer(DockerContainer):
         """
         client = self.get_client()
         response = client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": spl,
                 "output_mode": "json",
@@ -447,7 +447,7 @@ class ExternalSplunkConnection:
         """Execute a search and return results."""
         client = self.get_client()
         response = client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": spl,
                 "output_mode": "json",

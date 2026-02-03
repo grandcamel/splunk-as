@@ -209,7 +209,7 @@ def estimate(
     client = get_client_from_context(ctx)
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": search_spl,
             "earliest_time": earliest,
@@ -259,7 +259,7 @@ def stream(
 ) -> None:
     """Stream export results directly to file.
 
-    Uses the /search/jobs/export endpoint for efficient streaming without
+    Uses the /search/v2/jobs/export endpoint for efficient streaming without
     creating a persistent search job. Results stream as they become available.
 
     Best for large exports where you don't need to access the job later.
@@ -297,7 +297,7 @@ def stream(
     bytes_written = 0
     with open(output_file, "wb") as f:
         for chunk in client.stream_results(
-            "/search/jobs/export",
+            "/search/v2/jobs/export",
             params=params,
             timeout=api_settings.get("search_timeout", 300),
             operation="stream export",

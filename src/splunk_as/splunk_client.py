@@ -698,7 +698,7 @@ class SplunkClient:
 
         # Run as oneshot search
         self.post(
-            f"/servicesNS/{namespace}/{app}/search/jobs/oneshot",
+            f"/servicesNS/{namespace}/{app}/search/v2/jobs/oneshot",
             data={
                 "search": spl,
                 "output_mode": "json",

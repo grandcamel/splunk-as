@@ -84,7 +84,7 @@ class TestSearchCommands:
         assert result.exit_code == 0
         mock_client.post.assert_called_once()
         call_args = mock_client.post.call_args
-        assert "/search/jobs/oneshot" in call_args[0]
+        assert "/search/v2/jobs/oneshot" in call_args[0]
 
     @patch("splunk_as.cli.cli_utils.get_splunk_client")
     @patch("splunk_as.cli.commands.search_cmds.get_api_settings")
@@ -901,7 +901,7 @@ class TestExportStreamCommand:
         assert "Exported" in result.output
         mock_client.stream_results.assert_called_once()
         call_args = mock_client.stream_results.call_args
-        assert "/search/jobs/export" in call_args[0]
+        assert "/search/v2/jobs/export" in call_args[0]
 
     @patch("splunk_as.cli.cli_utils.get_splunk_client")
     @patch("splunk_as.cli.commands.export_cmds.get_api_settings")

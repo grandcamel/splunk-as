@@ -47,7 +47,7 @@ def list_tags(ctx: click.Context, app: str | None, output: str) -> None:
     # Use a search to find tags
     search = "| rest /services/configs/conf-tags | table title, eai:acl.app"
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={"search": search, "output_mode": "json", "count": 1000},
         operation="list tags",
     )
@@ -196,7 +196,7 @@ def search(
     spl += " | head 100"
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": spl,
             "earliest_time": earliest,

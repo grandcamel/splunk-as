@@ -149,7 +149,7 @@ def list_metrics(ctx: click.Context, index: str | None, output: str) -> None:
     spl += " | mvexpand metrics | sort metrics"
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={"search": spl, "output_mode": "json", "count": 1000},
         operation="list metrics",
     )
@@ -269,7 +269,7 @@ def mstats(
     spl += f" span={span}"
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": spl,
             "earliest_time": earliest,
@@ -335,7 +335,7 @@ def mcatalog(
     spl += " | stats count by metric_name, dimensions"
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={"search": spl, "output_mode": "json", "count": 1000},
         operation="mcatalog query",
     )
@@ -397,7 +397,7 @@ def mpreview(
     spl += f' | search metric_name="{metric_name}" | head {count}'
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={"search": spl, "output_mode": "json", "count": count},
         operation="mpreview query",
     )

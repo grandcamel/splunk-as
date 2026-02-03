@@ -73,7 +73,7 @@ class SearchMixin:
         """
         self._record_call(
             "POST",
-            "/services/search/jobs/oneshot",
+            "/services/search/v2/jobs/oneshot",
             data={
                 "search": spl,
                 "earliest_time": earliest_time,

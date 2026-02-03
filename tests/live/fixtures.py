@@ -10,7 +10,7 @@ Provides session-scoped fixtures for:
 
 Usage in tests:
     def test_search(splunk_client, test_data):
-        results = splunk_client.post('/search/jobs/oneshot', ...)
+        results = splunk_client.post('/search/v2/jobs/oneshot', ...)
         assert len(results) > 0
 """
 
@@ -275,7 +275,7 @@ def search_helper(splunk_client):
         def oneshot(self, spl: str, **kwargs) -> list:
             """Execute oneshot search and return results."""
             response = self.client.post(
-                "/search/jobs/oneshot",
+                "/search/v2/jobs/oneshot",
                 data={
                     "search": spl,
                     "output_mode": "json",

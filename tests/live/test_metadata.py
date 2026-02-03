@@ -47,7 +47,7 @@ class TestSourcetypeDiscovery:
     def test_list_sourcetypes_metadata(self, splunk_client):
         """Test listing sourcetypes via metadata search."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| metadata type=sourcetypes | head 20",
                 "output_mode": "json",
@@ -64,7 +64,7 @@ class TestSourcetypeDiscovery:
     def test_list_sourcetypes_for_index(self, splunk_client):
         """Test listing sourcetypes for a specific index."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| metadata type=sourcetypes index=_internal | head 10",
                 "output_mode": "json",
@@ -85,7 +85,7 @@ class TestSourceDiscovery:
     def test_list_sources(self, splunk_client):
         """Test listing sources via metadata search."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| metadata type=sources index=_internal | head 10",
                 "output_mode": "json",
@@ -106,7 +106,7 @@ class TestHostDiscovery:
     def test_list_hosts_metadata(self, splunk_client):
         """Test listing hosts via metadata search."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| metadata type=hosts | head 20",
                 "output_mode": "json",
@@ -123,7 +123,7 @@ class TestHostDiscovery:
     def test_list_hosts_for_index(self, splunk_client):
         """Test listing hosts for a specific index."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| metadata type=hosts index=_internal | head 10",
                 "output_mode": "json",
@@ -189,7 +189,7 @@ class TestRESTMetadata:
     def test_rest_server_info(self, splunk_client):
         """Test getting server info via REST search."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| rest /services/server/info | fields splunk_server, version, build",
                 "output_mode": "json",
@@ -205,7 +205,7 @@ class TestRESTMetadata:
     def test_rest_apps_local(self, splunk_client):
         """Test listing apps via REST search."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| rest /services/apps/local | head 10 | fields title, label, version",
                 "output_mode": "json",
@@ -220,7 +220,7 @@ class TestRESTMetadata:
     def test_tstats_count(self, splunk_client):
         """Test tstats for accelerated metadata queries."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "| tstats count WHERE index=_internal BY sourcetype | head 5",
                 "output_mode": "json",

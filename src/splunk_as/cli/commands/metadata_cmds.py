@@ -154,7 +154,7 @@ def search(
     search_spl += " | table * | sort -totalCount | head 100"
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": search_spl,
             "earliest_time": earliest,
@@ -211,7 +211,7 @@ def fields(
     search += " | fieldsummary | sort -count | head 50"
 
     response = client.post(
-        "/search/jobs/oneshot",
+        "/search/v2/jobs/oneshot",
         data={
             "search": search,
             "earliest_time": earliest,

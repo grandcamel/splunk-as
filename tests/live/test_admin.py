@@ -221,7 +221,7 @@ class TestInternalLogs:
     def test_search_internal_logs(self, splunk_client):
         """Test searching internal logs."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "search index=_internal | head 5",
                 "output_mode": "json",
@@ -237,7 +237,7 @@ class TestInternalLogs:
     def test_search_audit_logs(self, splunk_client):
         """Test searching audit logs."""
         response = splunk_client.post(
-            "/search/jobs/oneshot",
+            "/search/v2/jobs/oneshot",
             data={
                 "search": "search index=_audit | head 5",
                 "output_mode": "json",
